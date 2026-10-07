@@ -1,0 +1,161 @@
+{
+    "version": "1.0.0",
+    "description": "工单 13 RAG 评测数据集。事实源；seed 脚本把它同步为 Langfuse dataset。",
+    "k": 5,
+    "notes": [
+        "检索层 ground truth 用「文档标题」而非雪花 doc_id：跨环境可移植（doc_id 每次上传都会变）。",
+        "评测语料由 seed-corpus.mjs 生成（4 篇制度类文档），见 test/eval/corpus-manifest.json。",
+        "expected_doc_titles 为空表示该用例不做检索层指标（闲聊/无结果/联网），改用行为断言判定。"
+    ],
+    "items": [
+        {
+            "id": "qa-001",
+            "intent": "knowledge",
+            "question": "公司加班有餐补吗？",
+            "expected_doc_titles": [
+                "考勤与加班餐补制度"
+            ],
+            "expected_key_points": [
+                "工作日加班至 20:00 后可申请餐补",
+                "餐补标准为 30 元/次",
+                "随当月工资发放"
+            ]
+        },
+        {
+            "id": "qa-002",
+            "intent": "knowledge",
+            "question": "加班餐补一个月最多能领多少钱？",
+            "expected_doc_titles": [
+                "考勤与加班餐补制度"
+            ],
+            "expected_key_points": [
+                "每月餐补上限 600 元"
+            ]
+        },
+        {
+            "id": "qa-003",
+            "intent": "knowledge",
+            "question": "法定节假日加班的工资怎么计算？",
+            "expected_doc_titles": [
+                "考勤与加班餐补制度"
+            ],
+            "expected_key_points": [
+                "法定节假日加班按 3 倍工资计"
+            ]
+        },
+        {
+            "id": "qa-004",
+            "intent": "knowledge",
+            "question": "加班需要提前走什么流程吗？",
+            "expected_doc_titles": [
+                "考勤与加班餐补制度"
+            ],
+            "expected_key_points": [
+                "需提前在 OA 提交加班申请",
+                "经直属主管审批"
+            ]
+        },
+        {
+            "id": "qa-005",
+            "intent": "knowledge",
+            "question": "新员工入职第一周需要完成哪些事情？",
+            "expected_doc_titles": [
+                "研发中心新员工入职指南"
+            ],
+            "expected_key_points": [
+                "账号开通",
+                "环境搭建",
+                "规范学习"
+            ]
+        },
+        {
+            "id": "qa-006",
+            "intent": "knowledge",
+            "question": "新员工的导师制度是如何安排的？",
+            "expected_doc_titles": [
+                "研发中心新员工入职指南"
+            ],
+            "expected_key_points": [
+                "每名新员工有指定导师",
+                "导师期 3 个月"
+            ]
+        },
+        {
+            "id": "qa-007",
+            "intent": "knowledge",
+            "question": "公司的文档密级分为哪几级？",
+            "expected_doc_titles": [
+                "数据安全与权限管理规范"
+            ],
+            "expected_key_points": [
+                "分为公开、内部、机密三级"
+            ]
+        },
+        {
+            "id": "qa-008",
+            "intent": "knowledge",
+            "question": "机密文档哪些人可以查看？",
+            "expected_doc_titles": [
+                "数据安全与权限管理规范"
+            ],
+            "expected_key_points": [
+                "仅项目负责人及以上可见"
+            ]
+        },
+        {
+            "id": "qa-009",
+            "intent": "knowledge",
+            "question": "项目立项预算是 80 万，需要谁审批？",
+            "expected_doc_titles": [
+                "项目立项与审批流程"
+            ],
+            "expected_key_points": [
+                "预算超过 50 万需 CTO 审批"
+            ]
+        },
+        {
+            "id": "qa-010",
+            "intent": "graph",
+            "question": "项目立项中的技术评估由谁负责？",
+            "expected_doc_titles": [
+                "项目立项与审批流程"
+            ],
+            "expected_key_points": [
+                "技术评估由技术负责人王工完成"
+            ],
+            "notes": "图谱关系题：KG 管线从语料抽取实体关系后，retrieve_graph 应能命中「王工—负责→技术评估」。KG 就绪依赖异步抽取，未就绪时该用例判为跳过而非失败。"
+        },
+        {
+            "id": "qa-011",
+            "intent": "no_result",
+            "question": "公司年会在哪一天举办？",
+            "expected_doc_titles": [],
+            "expected_key_points": [],
+            "notes": "知识库无此信息，正确行为是明确告知未检索到，禁止编造。"
+        },
+        {
+            "id": "qa-012",
+            "intent": "no_result",
+            "question": "公司的股票代码是多少？",
+            "expected_doc_titles": [],
+            "expected_key_points": [],
+            "notes": "同上：应拒答而非编造。"
+        },
+        {
+            "id": "qa-013",
+            "intent": "chitchat",
+            "question": "你好呀，随便聊聊",
+            "expected_doc_titles": [],
+            "expected_key_points": [],
+            "notes": "闲聊：intent 应为 chitchat 且不挂知识库检索。"
+        },
+        {
+            "id": "qa-014",
+            "intent": "web",
+            "question": "帮我查一下今天上海的天气",
+            "expected_doc_titles": [],
+            "expected_key_points": [],
+            "notes": "联网：intent 应为 web 或 knowledge_then_web；未配 Tavily 时应如实说明搜索不可用。"
+        }
+    ]
+}

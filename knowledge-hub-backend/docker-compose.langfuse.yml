@@ -1,0 +1,190 @@
+# Langfuse 本地自托管栈（工单 13）
+#
+# 基线：Langfuse 官方 docker-compose（v4 栈）
+#   https://raw.githubusercontent.com/langfuse/langfuse/main/docker-compose.yml
+# 本文件相对官方的本地化改动（4 处）：
+#   1) langfuse-web 宿主端口 3000 → 3100（3000 被 NestJS 后端占用）
+#   2) 移除 postgres / redis / clickhouse 的宿主端口映射（仅容器内互访）
+#      —— 默认端口 5432 / 6379 / 9000 已被本项目 knowledge_hub 中间件占用，映射会直接冲突
+#   3) 打开 LANGFUSE_INIT_* 无头初始化：启动即自动建组织/项目/账号
+#   4) 敏感取值改为 ${LF_*} 插值（全部带默认值，单文件可直接 up）
+#
+# ⚠️ 插值变量必须保持 `LF_` 前缀，不要改回通用变量名
+#   本文件与后端 .env 同目录，Compose 会自动加载该 .env 做插值。
+#   早期版本用通用名 `POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB / REDIS_HOST`，
+#   被后端 .env 的值（user / 123456 / knowledge_hub / localhost）灌进 Langfuse 栈，
+#   Postgres 以错误凭据初始化 → 迁移报 Prisma P1000 认证失败。
+#   现统一加 `LF_` 前缀：后端 .env 中不存在同前缀的键，污染路径被切断。
+#
+#   如需覆盖（例如填自己的 Langfuse Key），任选其一：
+#     a) 独立 env 文件（该文件名已 gitignore，不会入库）：
+#        docker compose --env-file docker-compose.langfuse.env -f docker-compose.langfuse.yml up -d
+#     b) 先导出环境变量再 up，例如 PowerShell： $env:LF_INIT_PROJECT_SECRET_KEY="sk-lf-..."
+#
+# 启动：docker compose -f docker-compose.langfuse.yml up -d
+# 访问：http://localhost:3100 （账号见下方 LANGFUSE_INIT_USER_*）
+# 重置：docker compose -f docker-compose.langfuse.yml down -v
+
+name: knowledge-hub-langfuse
+
+services:
+  langfuse-worker:
+    image: docker.langfuse.com/langfuse/langfuse-worker:4
+    restart: always
+    depends_on: &langfuse-depends-on
+      postgres:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    ports:
+      - 127.0.0.1:3030:3030
+    environment: &langfuse-worker-env
+      NEXTAUTH_URL: http://localhost:${LF_WEB_PORT:-3100}
+      DATABASE_URL: postgresql://${LF_PG_USER:-postgres}:${LF_PG_PASSWORD:-postgres}@postgres:5432/${LF_PG_DB:-postgres}
+      # 以下 SALT / ENCRYPTION_KEY / NEXTAUTH_SECRET 为**本地开发默认值**：
+      # 仅用于本机自托管试跑，部署到任何非本机环境前必须用 --env-file 覆盖
+      SALT: ${LF_SALT:-knowledge-hub-langfuse-salt}
+      ENCRYPTION_KEY: ${LF_ENCRYPTION_KEY:-3f2a91c47b8e05d6a1c9f4e70b2d83a65c1e9f47a0b3d62c8e5f71a4b9c0d3e6}
+      TELEMETRY_ENABLED: "false"
+      LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: "false"
+      CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
+      CLICKHOUSE_URL: http://clickhouse:8123
+      CLICKHOUSE_USER: ${LF_CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${LF_CLICKHOUSE_PASSWORD:-clickhouse}
+      CLICKHOUSE_CLUSTER_ENABLED: "false"
+      CLICKHOUSE_CLUSTER_NAME: default
+      LANGFUSE_USE_AZURE_BLOB: "false"
+      LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
+      LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: ${LF_MINIO_USER:-minio}
+      LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${LF_MINIO_PASSWORD:-miniosecret}
+      LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
+      LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
+      LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
+      LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: ${LF_MINIO_USER:-minio}
+      LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${LF_MINIO_PASSWORD:-miniosecret}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
+      LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
+      LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
+      LANGFUSE_OBSERVATION_FIELD_OVERFLOW_ENABLED: "false"
+      LANGFUSE_OBSERVATION_FIELD_SIZE_LIMIT_BYTES: "2097152"
+      LANGFUSE_S3_BATCH_EXPORT_ENABLED: "false"
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_AUTH: ${LF_REDIS_AUTH:-myredissecret}
+      REDIS_TLS_ENABLED: "false"
+
+  langfuse-web:
+    image: docker.langfuse.com/langfuse/langfuse:4
+    restart: always
+    depends_on: *langfuse-depends-on
+    ports:
+      # 本地化改动 1/4：3100 取代 3000，避让 NestJS 后端
+      - ${LF_WEB_PORT:-3100}:3000
+    environment:
+      <<: *langfuse-worker-env
+      NEXTAUTH_SECRET: ${LF_NEXTAUTH_SECRET:-knowledge-hub-langfuse-secret}
+      LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://localhost:9090
+      LANGFUSE_S3_MEDIA_UPLOAD_INTERNAL_ENDPOINT: http://minio:9000
+      # 本地化改动 3/4：无头初始化（首启自动建组织/项目/账号 + 预置 API Key）
+      # 注意：值不要加引号，否则 Langfuse 读到的 key 会带上引号（上游已知问题 #3398）
+      LANGFUSE_INIT_ORG_ID: knowledge-hub
+      LANGFUSE_INIT_ORG_NAME: Knowledge Hub
+      LANGFUSE_INIT_PROJECT_ID: knowledge-hub
+      LANGFUSE_INIT_PROJECT_NAME: knowledge-hub-backend
+      # 项目 Key 默认仅为占位符：真实 Key 请用 --env-file / 环境变量注入，不要写回本文件
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LF_INIT_PROJECT_PUBLIC_KEY:-pk-lf-local-dev-placeholder}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LF_INIT_PROJECT_SECRET_KEY:-sk-lf-local-dev-placeholder}
+      LANGFUSE_INIT_USER_EMAIL: ${LF_INIT_USER_EMAIL:-admin@knowledge-hub.local}
+      LANGFUSE_INIT_USER_NAME: Knowledge Hub Admin
+      LANGFUSE_INIT_USER_PASSWORD: ${LF_INIT_USER_PASSWORD:-kh-langfuse-2026}
+
+  clickhouse:
+    image: docker.io/clickhouse/clickhouse-server:25.12
+    restart: always
+    user: "101:101"
+    environment:
+      CLICKHOUSE_DB: default
+      CLICKHOUSE_USER: ${LF_CLICKHOUSE_USER:-clickhouse}
+      CLICKHOUSE_PASSWORD: ${LF_CLICKHOUSE_PASSWORD:-clickhouse}
+    volumes:
+      - langfuse_clickhouse_data:/var/lib/clickhouse
+      - langfuse_clickhouse_logs:/var/log/clickhouse-server
+    # 本地化改动 2/4：移除宿主端口映射（默认 8123 / 9000 与本项目 ES / RustFS 冲突）
+    healthcheck:
+      test: wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 1s
+
+  minio:
+    image: cgr.dev/chainguard/minio
+    restart: always
+    entrypoint: sh
+    # create the 'langfuse' bucket before starting the service
+    command: -c 'mkdir -p /data/langfuse && minio server --address ":9000" --console-address ":9001" /data'
+    environment:
+      MINIO_ROOT_USER: ${LF_MINIO_USER:-minio}
+      MINIO_ROOT_PASSWORD: ${LF_MINIO_PASSWORD:-miniosecret}
+    ports:
+      - 9090:9000
+      - 127.0.0.1:9091:9001
+    volumes:
+      - langfuse_minio_data:/data
+    healthcheck:
+      test: [ "CMD", "mc", "ready", "local" ]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+      start_period: 1s
+
+  redis:
+    image: docker.io/redis:7
+    restart: always
+    command: >
+      --requirepass ${LF_REDIS_AUTH:-myredissecret} --maxmemory-policy noeviction
+    # 本地化改动 2/4：移除宿主端口映射（6379 已被本项目 Redis 占用）
+    volumes:
+      - langfuse_redis_data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 3s
+      timeout: 10s
+      retries: 10
+
+  postgres:
+    image: docker.io/postgres:17
+    restart: always
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 3s
+      timeout: 3s
+      retries: 10
+    environment:
+      POSTGRES_USER: ${LF_PG_USER:-postgres}
+      POSTGRES_PASSWORD: ${LF_PG_PASSWORD:-postgres}
+      POSTGRES_DB: ${LF_PG_DB:-postgres}
+      TZ: UTC
+      PGTZ: UTC
+    # 本地化改动 2/4：移除宿主端口映射（5432 已被本项目 PostgreSQL 占用）
+    volumes:
+      - langfuse_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  langfuse_postgres_data:
+    driver: local
+  langfuse_clickhouse_data:
+    driver: local
+  langfuse_clickhouse_logs:
+    driver: local
+  langfuse_minio_data:
+    driver: local
+  langfuse_redis_data:
+    driver: local

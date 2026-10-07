@@ -1,0 +1,50 @@
+# ══ 单仓库模式 ══
+# knowledge-hub-backend / knowledge-hub-front 已纳入本仓库统一管理；
+# 两者原有的独立 .git 已移至 .git-backups/（本地保留以便回滚，不入库）。
+.git-backups/
+
+# ── 不上传：内部联调 / 设计文档 ──
+backend-integration/
+
+# ── 不上传：个人向项目评估报告 ──
+# 注意：不要用通配 *.html —— knowledge-hub-front/index.html 是 Vite 入口，必须入库
+知识库项目评估报告.html
+项目评估与学习路径.html
+
+# ── 依赖与构建产物 ──
+node_modules/
+dist/
+dist-ssr/
+build/
+coverage/
+
+# ── 中间件数据（实测 936 MB）──
+knowledge-hub-backend/volumes/
+
+# ── 环境变量与凭据 ──
+# 真实 .env 永不入库；需要分享的配置一律写 .env.example
+.env
+.env.local
+.env.*.local
+!.env.example
+*.pem
+*.key
+
+# Langfuse 本地栈的取值覆盖文件（放真实 Key 用，不入库）
+knowledge-hub-backend/docker-compose.langfuse.env
+
+# ── 评测运行产物（含本机数据库 snowflake doc_id，跨环境不可移植）──
+knowledge-hub-backend/test/eval/corpus-manifest.json
+knowledge-hub-backend/test/eval/eval-report.md
+
+# ── 工作区数据 ──
+# 含文档批量脚本与「无版本保护区域」的备份，不纳入版本控制
+.workbuddy/
+
+# ── 本地工具设置（含个人权限白名单，不共享）──
+.claude/settings.local.json
+
+# ── OS ──
+.DS_Store
+Thumbs.db
+desktop.ini

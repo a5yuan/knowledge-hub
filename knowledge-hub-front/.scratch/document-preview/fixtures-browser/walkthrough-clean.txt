@@ -1,0 +1,4 @@
+纯文本走查 TXT_PLAINTEXT_MARKER
+
+这一份用于验证 txt 在解析完成前按原文展示、解析完成后切 markdown 的分支。
+行三：普通文本，无任何脚本。

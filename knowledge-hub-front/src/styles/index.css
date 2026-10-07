@@ -1,0 +1,47 @@
+/* 全局基础样式 */
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family:
+    'PingFang SC',
+    'Microsoft YaHei',
+    'Helvetica Neue',
+    Arial,
+    sans-serif;
+  font-size: 14px;
+  color: #303133;
+  background-color: #f5f7fa;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Element Plus 主题定制：主色对齐原型（蓝色 #1a66ff） */
+:root {
+  --el-color-primary: #1a66ff;
+  --el-color-primary-light-3: #628dff;
+  --el-color-primary-light-5: #8dabff;
+  --el-color-primary-light-7: #b9c8ff;
+  --el-color-primary-light-8: #ccd9ff;
+  --el-color-primary-light-9: #e7eeff;
+  --el-color-primary-dark-2: #1552cc;
+}
+
+/* 通用页面容器 */
+.page {
+  padding: 16px;
+}
+
+.page-title {
+  margin: 0 0 16px;
+  font-size: 18px;
+  font-weight: 600;
+}
