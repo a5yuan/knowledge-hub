@@ -163,7 +163,15 @@ export class RagSearchService {
       }));
     }
 
-    // 11 号工单阶段2：分数低于阈值的丢弃（RAG_SCORE_THRESHOLD，默认 0=关闭；rerank 分标度待标定）
+    // 11 号工单阶段2：分数低于阈值的丢弃（RAG_SCORE_THRESHOLD，默认 0=关闭）
+    //
+    // ⚠️ 启用前必读：items[].score 的量纲取决于 rerank 是否生效（见上方两个分支），
+    //    两者不可同尺度比较，直接用同一个阈值会误杀：
+    //      - rerank 生效：score = relevance_score（dashscope 相关性分，通常 0~1）
+    //      - rerank 降级：score = rrfScore（Σ 1/(60+rank)，双路召回下上限约 0.033）
+    //    后果：若阈值按 rerank 分标定（如 0.3），则 reranker 一旦故障降级，
+    //    **全部结果都会被过滤掉**，对外返回空列表——与「真的没有内容」不可区分。
+    //    正确做法是先让两路分数归一化，或把过滤限制在 rerank 生效分支内；不要直接照搬 rerank 分标度。
     const threshold = Number(
       this.config.get<string>('RAG_SCORE_THRESHOLD') ?? 0,
     );
