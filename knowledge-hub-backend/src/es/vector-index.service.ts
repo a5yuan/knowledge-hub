@@ -155,6 +155,10 @@ export class VectorIndexService {
         await this.ensureReady();
         const resp = await this.es.getClient().search({
             index: CHUNK_INDEX,
+            // ⚠️ 必须显式传 size：ES 顶层 size 默认只有 10，会截断返回条数；
+            //    knn.k 只放宽候选搜索、不决定返回多少条 —— 不传 size 时本函数最多只返回 10 条，
+            //    导致 KNN 路（10）与 BM25 路（size=50）候选池不对等，RRF 融合系统性偏向 BM25
+            size: k,
             knn: {
                 field: 'embedding',
                 query_vector: queryVector,
