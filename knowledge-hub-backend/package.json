@@ -19,7 +19,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "eval": "node test/eval/run-eval.mjs",
-    "eval:seed": "node test/eval/seed-corpus.mjs"
+    "eval:seed": "node test/eval/seed-corpus.mjs",
+    "eval:rerank-ab": "node test/eval/rerank-ab.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",
