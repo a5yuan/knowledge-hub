@@ -9,6 +9,9 @@ dist
 dist-ssr
 *.local
 
+# 演示录屏专用构建缓存（vite.demo.config.ts / demo 脚本使用）
+.vite-demo
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

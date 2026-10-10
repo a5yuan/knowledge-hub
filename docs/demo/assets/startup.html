@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"/>
+<title>知识库平台 · 项目启动过程</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:#0b0f14;color:#c9d1d9}
+  body{font:13px/1.6 "Cascadia Code","JetBrains Mono",Consolas,"Courier New",monospace;
+       padding:26px 40px 80px}
+  .bar{display:flex;align-items:center;gap:10px;padding:0 0 16px;
+       border-bottom:1px solid #1c2431;margin-bottom:24px}
+  .dots{display:flex;gap:7px}
+  .dots i{width:11px;height:11px;border-radius:50%;display:block}
+  .dots i:nth-child(1){background:#ff5f57}
+  .dots i:nth-child(2){background:#febc2e}
+  .dots i:nth-child(3){background:#28c840}
+  .bar .t{color:#8b949e;font-size:12.5px;margin-left:6px}
+  .bar .tag{margin-left:auto;font-size:11.5px;color:#58a6ff;border:1px solid #1f3a5f;
+       background:#0d2137;border-radius:5px;padding:3px 9px}
+  section{margin:0 0 26px;break-inside:avoid}
+  .cmd{color:#e6edf3;font-weight:600;margin:0 0 9px;font-size:13.5px;
+       display:flex;align-items:baseline;gap:0}
+  .cmd .ps1{color:#3fb950}
+  .cmd .cmt{color:#6e7681;font-weight:400;margin-left:14px;font-size:11.5px}
+  pre{margin:0;padding:13px 16px;background:#05080c;border:1px solid #1c2431;
+      border-radius:8px;white-space:pre-wrap;word-break:break-word;font-size:12px;
+      line-height:1.75;overflow-x:hidden}
+  .lv{color:#d29922;font-weight:600}
+  .tm{color:#6e7681}
+  .ok{color:#3fb950}
+  .warn{color:#d29922}
+  .svc{color:#79c0ff;font-weight:600}
+  .tagx{color:#7d8590;font-size:11px}
+  .sec-no{display:inline-block;width:21px;height:21px;line-height:21px;text-align:center;
+      background:#1f6feb;color:#fff;border-radius:5px;font-size:12px;margin-right:9px}
+  h2{font-size:15px;margin:0 0 12px;color:#e6edf3;font-weight:600;display:flex;align-items:center}
+  .note{color:#6e7681;font-size:11.5px;margin:7px 0 0;padding-left:2px}
+  .foot{margin-top:30px;padding-top:14px;border-top:1px solid #1c2431;
+        color:#6e7681;font-size:11.5px;line-height:1.9}
+  .foot b{color:#8b949e;font-weight:600}
+</style>
+</head>
+<body>
+  <div class="bar">
+    <div class="dots"><i></i><i></i><i></i></div>
+    <span class="t">knowledge-hub — 项目启动过程</span>
+    <span class="tag">真实启动日志回放</span>
+  </div>
+
+  <section id="s1">
+    <h2><span class="sec-no">1</span>拉起中间件 · Docker Compose</h2>
+    <p class="cmd"><span class="ps1">$&nbsp;</span>docker compose ps<span class="cmt"># 9 个中间件容器：ES / Kibana / Neo4j / PostgreSQL / MongoDB / Mongo-Express / RabbitMQ / Redis / RustFS</span></p>
+    <pre>SERVICE       NAME                         STATUS                 PORTS
+──────────────────────────────────────────────────────────────────────────────
+es            <span class="svc">knowledge_hub_elasticsearch</span>  <span class="warn">Up 11 hours</span>            0.0.0.0:9200-&gt;9200/tcp, [::]:9200-&gt;9200/tcp
+kibana        <span class="svc">knowledge_hub_kibana</span>         <span class="warn">Up 11 hours</span>            0.0.0.0:5601-&gt;5601/tcp, [::]:5601-&gt;5601/tcp
+mongo-express <span class="svc">knowledge_hub_mongo_express</span>  <span class="warn">Up 11 hours</span>            0.0.0.0:8081-&gt;8081/tcp, [::]:8081-&gt;8081/tcp
+mongodb       <span class="svc">knowledge_hub_mongodb</span>        <span class="ok">Up 11 hours (healthy)</span>  0.0.0.0:27017-&gt;27017/tcp, [::]:27017-&gt;27017/tcp
+neo4j         <span class="svc">knowledge_hub_neo4j</span>          <span class="warn">Up 11 hours</span>            0.0.0.0:7474-&gt;7474/tcp, [::]:7474-&gt;7474/tcp, 0.0.0.0:7687-&gt;7687/tcp, [::]:7687-&gt;7687/tcp
+postgres      <span class="svc">knowledge_hub_postgres</span>       <span class="ok">Up 11 hours (healthy)</span>  0.0.0.0:5432-&gt;5432/tcp, [::]:5432-&gt;5432/tcp
+rabbitmq      <span class="svc">knowledge_hub_rabbitmq</span>       <span class="ok">Up 11 hours (healthy)</span>  0.0.0.0:5672-&gt;5672/tcp, [::]:5672-&gt;5672/tcp, 0.0.0.0:15672-&gt;15672/tcp, [::]:15672-&gt;15672/tcp
+redis         <span class="svc">knowledge_hub_redis</span>          <span class="ok">Up 11 hours (healthy)</span>  6379/tcp
+rustfs        <span class="svc">knowledge_hub_rustfs</span>         <span class="ok">Up 11 hours (healthy)</span>  0.0.0.0:9000-9001-&gt;9000-9001/tcp, [::]:9000-9001-&gt;9000-9001/tcp</pre>
+  </section>
+
+  <section id="s2">
+    <h2><span class="sec-no">2</span>启动后端 · NestJS 11</h2>
+    <p class="cmd"><span class="ps1">$&nbsp;</span>node dist/main.js<span class="cmt"># TypeORM + Mongoose + Elasticsearch + Neo4j + RabbitMQ + RustFS</span></p>
+    <pre><span class="tm">20:54:48</span>  <span class="lv">LOG</span> [Tracing] Langfuse tracing 未启用（LANGFUSE_ENABLED=false 或缺少 API Key），跳过初始化
+<span class="tm">20:54:48</span>  <span class="lv">LOG</span> [NestFactory] Starting Nest application... +22ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] MineruModule dependencies initialized +653ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] StorageModule dependencies initialized +1ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] MqModule dependencies initialized +0ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] FileModule dependencies initialized +6ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] EsModule dependencies initialized +1ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] MongooseCoreModule dependencies initialized +181ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] PipelineModule dependencies initialized +0ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] TypeOrmCoreModule dependencies initialized +65ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] SearchModule dependencies initialized +3ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] RagModule dependencies initialized +0ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] KgModule dependencies initialized +0ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] TeamModule dependencies initialized +1ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] AuthModule dependencies initialized +1ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] AiModule dependencies initialized +0ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [InstanceLoader] DocumentModule dependencies initialized +1ms
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [RouterExplorer] Mapped {/document/upload, POST}  route +4ms   <span class="tagx">上传</span>
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [RouterExplorer] Mapped {/document/:id/publish, POST}  route +1ms   <span class="tagx">发布</span>
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [RouterExplorer] Mapped {/document/:id/approve, POST}  route +2ms   <span class="tagx">审核通过</span>
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [RouterExplorer] Mapped {/kg/overview, GET}  route +1ms   <span class="tagx">图谱概览</span>
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [RouterExplorer] Mapped {/auth/login, POST}  route +2ms   <span class="tagx">登录</span>
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [RouterExplorer] Mapped {/search, GET}  route +1ms   <span class="tagx">全文检索</span>
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [RouterExplorer] Mapped {/rag/search, GET}  route +1ms   <span class="tagx">混合检索</span>
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [RouterExplorer] Mapped {/ai/sessions/messages, POST}  route +1ms   <span class="tagx">Agent SSE</span>
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [MqService] RabbitMQ 拓扑<span class="ok">初始化完成</span> exchange=document.events queues=rag/kg + exchange=kh.document.exchange(topic) queue=kh.document.search.queue
+<span class="tm">20:54:49</span>  <span class="lv">LOG</span> [MineruService] MinerU provider = flash
+<span class="tm">20:54:50</span>  <span class="lv">LOG</span> [RustfsService] RustFS <span class="ok">就绪</span>: http://localhost:9000/knowledge-hub
+<span class="tm">20:54:50</span>  <span class="lv">LOG</span> [NestApplication] Nest application <span class="ok">successfully started</span> +12ms
+<span class="tm">20:54:50</span>  <span class="lv">LOG</span> [MqService] 消费者<span class="ok">已注册</span> queue=kg.queue
+<span class="tm">20:54:50</span>  <span class="lv">LOG</span> [MqService] 消费者<span class="ok">已注册</span> queue=rag.queue
+<span class="tm">20:54:50</span>  <span class="lv">LOG</span> [MqService] 消费者<span class="ok">已注册</span> queue=kh.document.search.queue
+<span class="tm">20:54:50</span>  <span class="lv">LOG</span> [RedisService] Redis <span class="ok">已连接</span></pre>
+    <p class="note">已折叠 17 条框架内部模块初始化、47 条路由映射与 10 条控制器注册，仅保留有信息量的行。</p>
+  </section>
+
+  <section id="s3">
+    <h2><span class="sec-no">3</span>启动前端 · Vue 3 + Vite 6</h2>
+    <p class="cmd"><span class="ps1">$&nbsp;</span>pnpm dev<span class="cmt"># 双通道：/api 走 Mock（分类/标签等后端未实现资源），/real 直连 NestJS</span></p>
+    <pre>VITE v6.4.3  ready in 6990 ms
+➜  Local:   http://127.0.0.1:5173/</pre>
+  </section>
+
+  <section id="s4">
+    <h2><span class="sec-no">4</span>就绪探针</h2>
+    <p class="cmd"><span class="ps1">$&nbsp;</span>curl 三个端点<span class="cmt"># 确认全链路可达；此时知识库为空，等待构建</span></p>
+    <pre>$ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/
+200
+
+$ curl -s -o /dev/null -w "%{http_code}\n" http://127.0.0.1:5173/
+200
+
+$ curl -s "localhost:9200/_cat/indices?v&amp;h=index,docs.count,store.size" | grep kh
+kh_chunk                                                                    0       257b
+kh_document                                                                 0       251b</pre>
+  </section>
+
+  <div class="foot">
+    <b>技术栈</b>　NestJS 11 · TypeORM · Mongoose · Elasticsearch 8（BM25 + KNN 双路召回）· Neo4j（知识图谱）· RabbitMQ · Redis · RustFS · MinerU（文档解析）<br/>
+    <b>Agent 层</b>　五类意图路由（chitchat / preference / knowledge / web / knowledge_then_web）· 手写 SSE 流 · 工具白名单 + 预算熔断<br/>
+    <b>说明</b>　以上日志由真实启动进程捕获后回放，未做任何改写。
+  </div>
+</body>
+</html>
