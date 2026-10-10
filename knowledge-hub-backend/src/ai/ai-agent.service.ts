@@ -77,6 +77,29 @@ const INTENT_LABELS: Record<AgentIntent, string> = {
   web: '联网',
   knowledge_then_web: '知识库不足再联网',
 };
+/**
+ * 11 号工单补丁（演示期实测缺陷修复）：把工具门控结果显式告知模型。
+ *
+ * 缺陷现象：intent=web 时前置管线跳过知识库预检索（intentAllowsKb=false），
+ * 上下文里没有任何「知识库不足」的证据，而 SYSTEM_PROMPT 把 web_search 描述为
+ * 「仅知识库不足时使用」——模型据此既不调用 web_search，又输出「知识库中未检索到
+ * 相关信息」，同时违反「不得编造」与工具门控两条约束。实测 4/4 复现。
+ *
+ * 修法：按意图注入一段指令，明确本轮可用路径与"预检索为空属正常"，
+ * 使门控（代码固定）与模型决策（自由）之间不再有信息落差。
+ */
+const INTENT_DIRECTIVES: Record<AgentIntent, string> = {
+  chitchat:
+    '【本轮意图】闲聊寒暄类。无需调用任何工具，直接自然作答，不要提及检索或知识库。',
+  preference:
+    '【本轮意图】用户个人偏好类。无需调用检索工具，直接结合上下文中的记忆作答。',
+  knowledge:
+    '【本轮意图】知识库检索。本轮不可联网。已有【知识库检索资料】属预检索结果：足以回答则直接作答；为空或不足时必须调用 retrieve_knowledge，必要时用 rewrite_query 换词重检，仍无果则如实告知用户知识库暂无相关内容。',
+  web:
+    '【本轮意图】联网搜索。本轮**不检索企业知识库**（未挂载 retrieve_knowledge），因此没有任何【知识库检索资料】属于正常现象，严禁据此输出「知识库中未检索到相关信息」这类未经检索的结论。你必须调用 web_search 获取公网信息，并基于返回结果作答；若 web_search 返回 0 条或不可用，再如实告知用户公网信息缺失。',
+  knowledge_then_web:
+    '【本轮意图】先知识库、不足再联网。已有【知识库检索资料】属预检索结果：足以回答则直接作答；缺失或不足时先调用 retrieve_knowledge 补检，仍未覆盖的部分再调用 web_search 联网补充。',
+};
 /** 11 号工单：切题评估三态（none=无资料，由 overallGrade 派生） */
 type ChunkGrade = 'on_topic' | 'partial' | 'off_topic';
 const VALID_GRADES = new Set<string>(['on_topic', 'partial', 'off_topic']);
@@ -101,6 +124,7 @@ const SYSTEM_PROMPT = `你是企业智能知识库的 AI 问答助手，可用�
 - 知识库确实没有相关信息时明确告知用户「知识库中未检索到相关信息」，禁止用记忆或制度背景编造
 - 引用 Web 结果时在句末以 (来源: 域名) 标注
 - 工具不可用或无结果时如实告知，不要编造；若问题无需工具（闲聊、个人偏好），直接回答
+- 系统提示中的【本轮意图】段落是给你内部使用的路由指令：禁止在回答里出现「本轮意图」「调用 web_search」「未挂载 retrieve_knowledge」这类元信息、工具名或流程自述，直接输出面向用户的答案正文
 上下文可能附带【用户长期记忆】【当前会话记忆】【早期对话摘要】【知识库检索资料】【知识图谱实体关系】等参考信息：
 - 检索资料已通过切题评估，可信优先使用并按全局编号标 [n]；资料不足时调 retrieve_knowledge，或用 rewrite_query 改写后再查
 - 图谱实体关系描述实体间的审批、归属、关联等事实，回答此类问题优先引用对应 [n]
@@ -295,7 +319,7 @@ export class AiAgentService {
         SystemMessage | HumanMessage | AIMessage | ToolMessage
       > = [
           new SystemMessage(
-            this.buildSystemContext(memHits, summary, kbHit.text),
+            this.buildSystemContext(memHits, summary, kbHit.text, plan.intent),
           ),
           ...history.map((h) =>
             h.role === 'user'
@@ -944,8 +968,9 @@ grade 取值：
     memHits: Mem0Hit[],
     summary: string,
     kbText: string,
+    intent: AgentIntent,
   ): string {
-    const sections: string[] = [SYSTEM_PROMPT];
+    const sections: string[] = [SYSTEM_PROMPT, INTENT_DIRECTIVES[intent]];
     if (memHits.length > 0) {
       const userMem = memHits.filter((m) => m.layer === 'user');
       const sessionMem = memHits.filter((m) => m.layer === 'session');
