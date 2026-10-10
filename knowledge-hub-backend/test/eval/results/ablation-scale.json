@@ -1,0 +1,2696 @@
+{
+  "generatedAt": "2026-10-09T02:07:08.911Z",
+  "base": "http://localhost:3000",
+  "k": 5,
+  "summary": [
+    {
+      "key": "hybrid_rerank",
+      "arm": "RRF 双路 + 精排（生产配置）",
+      "mode": "hybrid",
+      "rerank": true,
+      "recall_at_k": 1,
+      "precision_at_k": 0.20000000000000007,
+      "mrr": 0.9385964912280703,
+      "hit_at_k": 1,
+      "took_mean": 305.42105263157896,
+      "took_p50": 301,
+      "took_p95": 419,
+      "stages": {
+        "embed_ms": 151.1578947368421,
+        "knn_ms": 65.3157894736842,
+        "bm25_ms": 19.157894736842106,
+        "fuse_ms": 0.05263157894736842,
+        "rerank_ms": 88.84210526315789
+      },
+      "n": 19
+    },
+    {
+      "key": "hybrid_rrf",
+      "arm": "RRF 双路 仅排序（卡2 baseline）",
+      "mode": "hybrid",
+      "rerank": false,
+      "recall_at_k": 0.9473684210526315,
+      "precision_at_k": 0.18947368421052638,
+      "mrr": 0.8859649122807018,
+      "hit_at_k": 0.9473684210526315,
+      "took_mean": 199.68421052631578,
+      "took_p50": 194,
+      "took_p95": 285,
+      "stages": {
+        "embed_ms": 137.31578947368422,
+        "knn_ms": 61.94736842105263,
+        "bm25_ms": 19.105263157894736,
+        "fuse_ms": 0.21052631578947367,
+        "rerank_ms": 0
+      },
+      "n": 19
+    },
+    {
+      "key": "weighted_rerank",
+      "arm": "加权求和双路 + 精排",
+      "mode": "hybrid_weighted",
+      "rerank": true,
+      "recall_at_k": 0.9473684210526315,
+      "precision_at_k": 0.18947368421052638,
+      "mrr": 0.9078947368421053,
+      "hit_at_k": 0.9473684210526315,
+      "took_mean": 331.3157894736842,
+      "took_p50": 292,
+      "took_p95": 659,
+      "stages": {
+        "embed_ms": 152.47368421052633,
+        "knn_ms": 63,
+        "bm25_ms": 17.736842105263158,
+        "fuse_ms": 0.21052631578947367,
+        "rerank_ms": 115.52631578947368
+      },
+      "n": 19
+    },
+    {
+      "key": "weighted_rrf",
+      "arm": "加权求和双路 仅排序",
+      "mode": "hybrid_weighted",
+      "rerank": false,
+      "recall_at_k": 0.9473684210526315,
+      "precision_at_k": 0.18947368421052638,
+      "mrr": 0.9078947368421053,
+      "hit_at_k": 0.9473684210526315,
+      "took_mean": 211.94736842105263,
+      "took_p50": 215,
+      "took_p95": 273,
+      "stages": {
+        "embed_ms": 148.52631578947367,
+        "knn_ms": 63.21052631578947,
+        "bm25_ms": 17.789473684210527,
+        "fuse_ms": 0,
+        "rerank_ms": 0
+      },
+      "n": 19
+    },
+    {
+      "key": "bm25_rerank",
+      "arm": "纯 BM25 + 精排（卡1 baseline）",
+      "mode": "bm25",
+      "rerank": true,
+      "recall_at_k": 0.9473684210526315,
+      "precision_at_k": 0.18947368421052638,
+      "mrr": 0.9210526315789473,
+      "hit_at_k": 0.9473684210526315,
+      "took_mean": 141.47368421052633,
+      "took_p50": 103,
+      "took_p95": 805,
+      "stages": {
+        "embed_ms": 0,
+        "knn_ms": 0,
+        "bm25_ms": 17.894736842105264,
+        "fuse_ms": 0,
+        "rerank_ms": 123.47368421052632
+      },
+      "n": 19
+    },
+    {
+      "key": "bm25_rrf",
+      "arm": "纯 BM25 仅排序",
+      "mode": "bm25",
+      "rerank": false,
+      "recall_at_k": 0.9473684210526315,
+      "precision_at_k": 0.18947368421052638,
+      "mrr": 0.9210526315789473,
+      "hit_at_k": 0.9473684210526315,
+      "took_mean": 19.36842105263158,
+      "took_p50": 19,
+      "took_p95": 35,
+      "stages": {
+        "embed_ms": 0,
+        "knn_ms": 0,
+        "bm25_ms": 19.263157894736842,
+        "fuse_ms": 0.10526315789473684,
+        "rerank_ms": 0
+      },
+      "n": 19
+    },
+    {
+      "key": "knn_rerank",
+      "arm": "纯向量 KNN + 精排",
+      "mode": "knn",
+      "rerank": true,
+      "recall_at_k": 0.8421052631578947,
+      "precision_at_k": 0.16842105263157897,
+      "mrr": 0.8421052631578947,
+      "hit_at_k": 0.8421052631578947,
+      "took_mean": 335.1578947368421,
+      "took_p50": 295,
+      "took_p95": 1113,
+      "stages": {
+        "embed_ms": 182.78947368421052,
+        "knn_ms": 64.26315789473684,
+        "bm25_ms": 0,
+        "fuse_ms": 0.05263157894736842,
+        "rerank_ms": 88.05263157894737
+      },
+      "n": 19
+    },
+    {
+      "key": "knn_rrf",
+      "arm": "纯向量 KNN 仅排序",
+      "mode": "knn",
+      "rerank": false,
+      "recall_at_k": 0.8421052631578947,
+      "precision_at_k": 0.16842105263157897,
+      "mrr": 0.8421052631578947,
+      "hit_at_k": 0.8421052631578947,
+      "took_mean": 235.52631578947367,
+      "took_p50": 210,
+      "took_p95": 660,
+      "stages": {
+        "embed_ms": 169.31578947368422,
+        "knn_ms": 66.21052631578948,
+        "bm25_ms": 0,
+        "fuse_ms": 0,
+        "rerank_ms": 0
+      },
+      "n": 19
+    }
+  ],
+  "rows": [
+    {
+      "id": "sc-term-01",
+      "q": "DC01 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（DC01）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 419,
+        "top1": "冷轧退火工艺规程（DC01）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 285,
+        "top1": "冷轧退火工艺规程（DC01）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 331,
+        "top1": "冷轧退火工艺规程（DC01）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 211,
+        "top1": "冷轧退火工艺规程（DC01）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 116,
+        "top1": "冷轧退火工艺规程（DC01）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 23,
+        "top1": "冷轧退火工艺规程（DC01）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 332,
+        "top1": "冷轧退火工艺规程（DC01）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 218,
+        "top1": "冷轧退火工艺规程（DC01）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-02",
+      "q": "DC03 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（DC03）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 341,
+        "top1": "冷轧退火工艺规程（DC03）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC02）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 180,
+        "top1": "冷轧退火工艺规程（DC03）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC02）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 302,
+        "top1": "冷轧退火工艺规程（DC03）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC07）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 222,
+        "top1": "冷轧退火工艺规程（DC03）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 805,
+        "top1": "冷轧退火工艺规程（DC03）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 18,
+        "top1": "冷轧退火工艺规程（DC03）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 1113,
+        "top1": "冷轧退火工艺规程（DC03）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC02）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 210,
+        "top1": "冷轧退火工艺规程（DC03）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-03",
+      "q": "DC05 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（DC05）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 299,
+        "top1": "冷轧退火工艺规程（DC05）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 134,
+        "top1": "冷轧退火工艺规程（DC05）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 260,
+        "top1": "冷轧退火工艺规程（DC05）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 170,
+        "top1": "冷轧退火工艺规程（DC05）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 98,
+        "top1": "冷轧退火工艺规程（DC05）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 23,
+        "top1": "冷轧退火工艺规程（DC05）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 332,
+        "top1": "冷轧退火工艺规程（DC05）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 189,
+        "top1": "冷轧退火工艺规程（DC05）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-04",
+      "q": "DC07 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（DC07）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 301,
+        "top1": "冷轧退火工艺规程（DC07）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 200,
+        "top1": "冷轧退火工艺规程（DC07）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 282,
+        "top1": "冷轧退火工艺规程（DC07）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 190,
+        "top1": "冷轧退火工艺规程（DC07）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 79,
+        "top1": "冷轧退火工艺规程（DC07）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 17,
+        "top1": "冷轧退火工艺规程（DC07）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 344,
+        "top1": "冷轧退火工艺规程（DC07）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 248,
+        "top1": "冷轧退火工艺规程（DC07）",
+        "topTitles": [
+          "冷轧退火工艺规程（DC07）",
+          "冷轧退火工艺规程（DC02）",
+          "冷轧退火工艺规程（DC03）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC05）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-05",
+      "q": "SPCD 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（SPCD）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 302,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCC）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 202,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCC）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 255,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 198,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 92,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 23,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 282,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 182,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-06",
+      "q": "SPCF 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（SPCF）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 285,
+        "top1": "冷轧退火工艺规程（SPCF）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 209,
+        "top1": "冷轧退火工艺规程（SPCF）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 381,
+        "top1": "冷轧退火工艺规程（SPCF）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 227,
+        "top1": "冷轧退火工艺规程（SPCF）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 106,
+        "top1": "冷轧退火工艺规程（SPCF）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 16,
+        "top1": "冷轧退火工艺规程（SPCF）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 326,
+        "top1": "冷轧退火工艺规程（SPCF）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 198,
+        "top1": "冷轧退火工艺规程（SPCF）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCC）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）",
+          "冷轧退火工艺规程（SPCD）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-07",
+      "q": "St12 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（St12）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 266,
+        "top1": "冷轧退火工艺规程（St12）",
+        "topTitles": [
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St13）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 192,
+        "top1": "冷轧退火工艺规程（St12）",
+        "topTitles": [
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St13）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 312,
+        "top1": "冷轧退火工艺规程（St12）",
+        "topTitles": [
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St13）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St16）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 178,
+        "top1": "冷轧退火工艺规程（St12）",
+        "topTitles": [
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St13）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St16）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 105,
+        "top1": "冷轧退火工艺规程（St12）",
+        "topTitles": [
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 21,
+        "top1": "冷轧退火工艺规程（St12）",
+        "topTitles": [
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 259,
+        "top1": "冷轧退火工艺规程（St12）",
+        "topTitles": [
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St13）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St16）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 227,
+        "top1": "冷轧退火工艺规程（St12）",
+        "topTitles": [
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St13）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St16）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-08",
+      "q": "St14 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（St14）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 312,
+        "top1": "冷轧退火工艺规程（St14）",
+        "topTitles": [
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 186,
+        "top1": "冷轧退火工艺规程（St14）",
+        "topTitles": [
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 282,
+        "top1": "冷轧退火工艺规程（St14）",
+        "topTitles": [
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St12）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 203,
+        "top1": "冷轧退火工艺规程（St14）",
+        "topTitles": [
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St12）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 95,
+        "top1": "冷轧退火工艺规程（St14）",
+        "topTitles": [
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 35,
+        "top1": "冷轧退火工艺规程（St14）",
+        "topTitles": [
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 295,
+        "top1": "冷轧退火工艺规程（St14）",
+        "topTitles": [
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St12）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 239,
+        "top1": "冷轧退火工艺规程（St14）",
+        "topTitles": [
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St12）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-09",
+      "q": "St16 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（St16）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 271,
+        "top1": "冷轧退火工艺规程（St16）",
+        "topTitles": [
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St14）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 173,
+        "top1": "冷轧退火工艺规程（St16）",
+        "topTitles": [
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（St14）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 318,
+        "top1": "冷轧退火工艺规程（St16）",
+        "topTitles": [
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St12）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 171,
+        "top1": "冷轧退火工艺规程（St16）",
+        "topTitles": [
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St12）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 103,
+        "top1": "冷轧退火工艺规程（St16）",
+        "topTitles": [
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 14,
+        "top1": "冷轧退火工艺规程（St16）",
+        "topTitles": [
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 275,
+        "top1": "冷轧退火工艺规程（St16）",
+        "topTitles": [
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St12）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 172,
+        "top1": "冷轧退火工艺规程（St16）",
+        "topTitles": [
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St16）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（St14）",
+          "冷轧退火工艺规程（St12）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-10",
+      "q": "Q215 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（Q215）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 268,
+        "top1": "冷轧退火工艺规程（Q215）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q195）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（HC180Y）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 188,
+        "top1": "冷轧退火工艺规程（Q215）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q195）",
+          "冷轧退火工艺规程（St15）",
+          "冷轧退火工艺规程（HC180Y）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 258,
+        "top1": "冷轧退火工艺规程（Q215）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q195）",
+          "冷轧退火工艺规程（Q235）",
+          "冷轧退火工艺规程（Q275）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 223,
+        "top1": "冷轧退火工艺规程（Q215）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q195）",
+          "冷轧退火工艺规程（Q235）",
+          "冷轧退火工艺规程（Q275）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 104,
+        "top1": "冷轧退火工艺规程（Q215）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 19,
+        "top1": "冷轧退火工艺规程（Q215）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 304,
+        "top1": "冷轧退火工艺规程（Q215）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q195）",
+          "冷轧退火工艺规程（Q235）",
+          "冷轧退火工艺规程（Q275）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 210,
+        "top1": "冷轧退火工艺规程（Q215）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q195）",
+          "冷轧退火工艺规程（Q235）",
+          "冷轧退火工艺规程（Q275）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-11",
+      "q": "Q275 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（Q275）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 270,
+        "top1": "冷轧退火工艺规程（Q275）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（DC05）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 183,
+        "top1": "冷轧退火工艺规程（Q275）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（DC05）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 247,
+        "top1": "冷轧退火工艺规程（Q275）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q235）",
+          "冷轧退火工艺规程（Q195）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 215,
+        "top1": "冷轧退火工艺规程（Q275）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q235）",
+          "冷轧退火工艺规程（Q195）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 163,
+        "top1": "冷轧退火工艺规程（Q275）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 14,
+        "top1": "冷轧退火工艺规程（Q275）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 258,
+        "top1": "冷轧退火工艺规程（Q275）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q235）",
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q195）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 223,
+        "top1": "冷轧退火工艺规程（Q275）",
+        "topTitles": [
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q215）",
+          "冷轧退火工艺规程（Q275）",
+          "冷轧退火工艺规程（Q235）",
+          "冷轧退火工艺规程（Q195）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-12",
+      "q": "HC220Y 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（HC220Y）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 343,
+        "top1": "冷轧退火工艺规程（HC220Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（SPCC）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 188,
+        "top1": "冷轧退火工艺规程（HC220Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（SPCC）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 284,
+        "top1": "冷轧退火工艺规程（HC220Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（HC300Y）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 245,
+        "top1": "冷轧退火工艺规程（HC220Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC180Y）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 100,
+        "top1": "冷轧退火工艺规程（HC220Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 22,
+        "top1": "冷轧退火工艺规程（HC220Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 295,
+        "top1": "冷轧退火工艺规程（HC220Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC180Y）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 200,
+        "top1": "冷轧退火工艺规程（HC220Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC180Y）"
+        ]
+      }
+    },
+    {
+      "id": "sc-term-13",
+      "q": "HC300Y 的均热段保温温度和机组速度分别是多少？",
+      "expected": "冷轧退火工艺规程（HC300Y）",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 303,
+        "top1": "冷轧退火工艺规程（HC300Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（HC220Y）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 194,
+        "top1": "冷轧退火工艺规程（HC300Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（HC260Y）",
+          "冷轧退火工艺规程（HC220Y）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 396,
+        "top1": "冷轧退火工艺规程（HC300Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC340Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（HC220Y）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 242,
+        "top1": "冷轧退火工艺规程（HC300Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC340Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（HC220Y）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 75,
+        "top1": "冷轧退火工艺规程（HC300Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 15,
+        "top1": "冷轧退火工艺规程（HC300Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 257,
+        "top1": "冷轧退火工艺规程（HC300Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC340Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC300Y）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 164,
+        "top1": "冷轧退火工艺规程（HC300Y）",
+        "topTitles": [
+          "冷轧退火工艺规程（HC300Y）",
+          "冷轧退火工艺规程（HC340Y）",
+          "冷轧退火工艺规程（HC180Y）",
+          "冷轧退火工艺规程（HC220Y）",
+          "冷轧退火工艺规程（HC300Y）"
+        ]
+      }
+    },
+    {
+      "id": "sc-nat-01",
+      "q": "冲压时总是裂开，是不是材料太硬了？",
+      "expected": "板形与力学性能异常处置规程",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.3333333333333333,
+        "hit_at_k": 1,
+        "first_hit_rank": 3,
+        "tookMs": 238,
+        "top1": "产品质量事故分级与追责办法",
+        "topTitles": [
+          "产品质量事故分级与追责办法",
+          "表面缺陷判定与处置标准（划伤）",
+          "板形与力学性能异常处置规程",
+          "连铸工艺规程·去毛刺机（第 18 分册）",
+          "连铸工艺规程·去毛刺机（第 2 分册）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.3333333333333333,
+        "hit_at_k": 1,
+        "first_hit_rank": 3,
+        "tookMs": 175,
+        "top1": "产品质量事故分级与追责办法",
+        "topTitles": [
+          "产品质量事故分级与追责办法",
+          "表面缺陷判定与处置标准（划伤）",
+          "板形与力学性能异常处置规程",
+          "连铸工艺规程·去毛刺机（第 18 分册）",
+          "连铸工艺规程·去毛刺机（第 2 分册）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.25,
+        "hit_at_k": 1,
+        "first_hit_rank": 4,
+        "tookMs": 285,
+        "top1": "产品质量事故分级与追责办法",
+        "topTitles": [
+          "产品质量事故分级与追责办法",
+          "表面缺陷判定与处置标准（划伤）",
+          "连铸工艺规程·去毛刺机（第 12 分册）",
+          "板形与力学性能异常处置规程",
+          "连铸工艺规程·去毛刺机（第 18 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.25,
+        "hit_at_k": 1,
+        "first_hit_rank": 4,
+        "tookMs": 171,
+        "top1": "产品质量事故分级与追责办法",
+        "topTitles": [
+          "产品质量事故分级与追责办法",
+          "表面缺陷判定与处置标准（划伤）",
+          "连铸工艺规程·去毛刺机（第 12 分册）",
+          "板形与力学性能异常处置规程",
+          "连铸工艺规程·去毛刺机（第 18 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 121,
+        "top1": "产品质量事故分级与追责办法",
+        "topTitles": [
+          "产品质量事故分级与追责办法",
+          "板形与力学性能异常处置规程",
+          "连铸工艺规程·电磁搅拌（第 2 分册）",
+          "连铸工艺规程·电磁搅拌（第 10 分册）",
+          "连铸工艺规程·保护浇注（第 15 分册）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 28,
+        "top1": "产品质量事故分级与追责办法",
+        "topTitles": [
+          "产品质量事故分级与追责办法",
+          "板形与力学性能异常处置规程",
+          "连铸工艺规程·电磁搅拌（第 2 分册）",
+          "连铸工艺规程·电磁搅拌（第 10 分册）",
+          "连铸工艺规程·保护浇注（第 15 分册）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 318,
+        "top1": "产品质量事故分级与追责办法",
+        "topTitles": [
+          "产品质量事故分级与追责办法",
+          "表面缺陷判定与处置标准（划伤）",
+          "连铸工艺规程·去毛刺机（第 12 分册）",
+          "连铸工艺规程·去毛刺机（第 18 分册）",
+          "连铸工艺规程·去毛刺机（第 11 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 233,
+        "top1": "产品质量事故分级与追责办法",
+        "topTitles": [
+          "产品质量事故分级与追责办法",
+          "表面缺陷判定与处置标准（划伤）",
+          "连铸工艺规程·去毛刺机（第 12 分册）",
+          "连铸工艺规程·去毛刺机（第 18 分册）",
+          "连铸工艺规程·去毛刺机（第 11 分册）"
+        ]
+      }
+    },
+    {
+      "id": "sc-nat-02",
+      "q": "板子一成形就变形走样，是不是太硬？",
+      "expected": "板形与力学性能异常处置规程",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 354,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（Q195）",
+          "产品质量事故分级与追责办法",
+          "表面缺陷判定与处置标准（结疤）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 217,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（Q195）",
+          "产品质量事故分级与追责办法",
+          "表面缺陷判定与处置标准（结疤）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 659,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（Q195）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 226,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（Q195）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 164,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 20,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 274,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（结疤）",
+          "表面缺陷判定与处置标准（塔形）",
+          "表面缺陷判定与处置标准（划伤）",
+          "表面缺陷判定与处置标准（压痕）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 210,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（结疤）",
+          "表面缺陷判定与处置标准（塔形）",
+          "表面缺陷判定与处置标准（划伤）",
+          "表面缺陷判定与处置标准（压痕）"
+        ]
+      }
+    },
+    {
+      "id": "sc-nat-03",
+      "q": "工件加工时边缘展不开，是什么原因？",
+      "expected": "板形与力学性能异常处置规程",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 292,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（边裂）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "连铸工艺规程·轻压下（第 5 分册）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 214,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（边裂）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "连铸工艺规程·轻压下（第 5 分册）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 292,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（边裂）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "连铸工艺规程·轻压下（第 5 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 236,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（边裂）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "连铸工艺规程·轻压下（第 5 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 76,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 4,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 284,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（边裂）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "连铸工艺规程·轻压下（第 5 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 208,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（边裂）",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCG）",
+          "连铸工艺规程·轻压下（第 5 分册）"
+        ]
+      }
+    },
+    {
+      "id": "sc-nat-04",
+      "q": "料太硬加工不动，炉子那边要怎么调？",
+      "expected": "板形与力学性能异常处置规程",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 322,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（SPCD）",
+          "连铸工艺规程·连铸坯低倍检验（第 14 分册）",
+          "冷轧退火工艺规程（SPCF）",
+          "连铸工艺规程·中间包耐材（第 16 分册）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 207,
+        "top1": "连铸工艺规程·连铸坯低倍检验（第 14 分册）",
+        "topTitles": [
+          "连铸工艺规程·连铸坯低倍检验（第 14 分册）",
+          "冷轧退火工艺规程（SPCD）",
+          "连铸工艺规程·中间包耐材（第 16 分册）",
+          "冷轧退火工艺规程（SPCF）",
+          "连铸工艺规程·中间包耐材（第 2 分册）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 396,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）",
+          "冷轧退火工艺规程（SPCC）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 206,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）",
+          "冷轧退火工艺规程（SPCC）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 84,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）",
+          "冷轧退火工艺规程（SPCC）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 14,
+        "top1": "冷轧退火工艺规程（SPCD）",
+        "topTitles": [
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）",
+          "冷轧退火工艺规程（SPCG）",
+          "冷轧退火工艺规程（SPCE）",
+          "冷轧退火工艺规程（SPCC）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 259,
+        "top1": "连铸工艺规程·连铸坯低倍检验（第 14 分册）",
+        "topTitles": [
+          "连铸工艺规程·连铸坯低倍检验（第 14 分册）",
+          "连铸工艺规程·中间包耐材（第 16 分册）",
+          "连铸工艺规程·中间包耐材（第 2 分册）",
+          "连铸工艺规程·中间包耐材（第 11 分册）",
+          "连铸工艺规程·中间包耐材（第 18 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 660,
+        "top1": "连铸工艺规程·连铸坯低倍检验（第 14 分册）",
+        "topTitles": [
+          "连铸工艺规程·连铸坯低倍检验（第 14 分册）",
+          "连铸工艺规程·中间包耐材（第 16 分册）",
+          "连铸工艺规程·中间包耐材（第 2 分册）",
+          "连铸工艺规程·中间包耐材（第 11 分册）",
+          "连铸工艺规程·中间包耐材（第 18 分册）"
+        ]
+      }
+    },
+    {
+      "id": "sc-nat-05",
+      "q": "怎样才能让钢板变得容易成形一些？",
+      "expected": "板形与力学性能异常处置规程",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 324,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "实习总结",
+          "冷轧退火工艺规程（St12）",
+          "实习总结"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 210,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "实习总结",
+          "冷轧退火工艺规程（St12）",
+          "实习总结"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 285,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "实习总结",
+          "实习总结",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（St12）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 273,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "实习总结",
+          "实习总结",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（St12）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 93,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "实习总结",
+          "实习总结",
+          "实习总结",
+          "实习总结"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 9,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "实习总结",
+          "实习总结",
+          "实习总结",
+          "实习总结"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 262,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（St15）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 240,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "板形与力学性能异常处置规程",
+          "冷轧退火工艺规程（St12）",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（St15）"
+        ]
+      }
+    },
+    {
+      "id": "sc-nat-06",
+      "q": "抽检试样测出来偏硬，该走哪个流程？",
+      "expected": "板形与力学性能异常处置规程",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 293,
+        "top1": "表面缺陷判定与处置标准（压痕）",
+        "topTitles": [
+          "表面缺陷判定与处置标准（压痕）",
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（边裂）",
+          "项目立项与审批流程",
+          "表面缺陷判定与处置标准（塔形）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 257,
+        "top1": "表面缺陷判定与处置标准（压痕）",
+        "topTitles": [
+          "表面缺陷判定与处置标准（压痕）",
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（边裂）",
+          "项目立项与审批流程",
+          "表面缺陷判定与处置标准（塔形）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 470,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（压痕）",
+          "项目立项与审批流程",
+          "表面缺陷判定与处置标准（边裂）",
+          "表面缺陷判定与处置标准（塔形）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 220,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "表面缺陷判定与处置标准（压痕）",
+          "项目立项与审批流程",
+          "表面缺陷判定与处置标准（边裂）",
+          "表面缺陷判定与处置标准（塔形）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 109,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "项目立项与审批流程",
+          "实习总结",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 33,
+        "top1": "板形与力学性能异常处置规程",
+        "topTitles": [
+          "板形与力学性能异常处置规程",
+          "项目立项与审批流程",
+          "实习总结",
+          "冷轧退火工艺规程（SPCD）",
+          "冷轧退火工艺规程（SPCF）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 299,
+        "top1": "表面缺陷判定与处置标准（压痕）",
+        "topTitles": [
+          "表面缺陷判定与处置标准（压痕）",
+          "表面缺陷判定与处置标准（边裂）",
+          "表面缺陷判定与处置标准（塔形）",
+          "表面缺陷判定与处置标准（划伤）",
+          "表面缺陷判定与处置标准（夹杂）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 244,
+        "top1": "表面缺陷判定与处置标准（压痕）",
+        "topTitles": [
+          "表面缺陷判定与处置标准（压痕）",
+          "表面缺陷判定与处置标准（边裂）",
+          "表面缺陷判定与处置标准（塔形）",
+          "表面缺陷判定与处置标准（划伤）",
+          "表面缺陷判定与处置标准（夹杂）"
+        ]
+      }
+    }
+  ]
+}

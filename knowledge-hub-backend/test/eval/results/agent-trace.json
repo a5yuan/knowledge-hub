@@ -1,0 +1,463 @@
+{
+  "base": "http://localhost:3000",
+  "started_at": "2026-10-09T02:17:10.710Z",
+  "conversations": [
+    {
+      "name": "A · 多轮：闲聊 → 制度知识 → 追问归属",
+      "kind": "multi",
+      "turns": [
+        {
+          "question": "你好，你是谁？",
+          "session_id": "7514146915382988800",
+          "intent": "chitchat",
+          "suggested_terms": [],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 0,
+          "tools": {
+            "retrieve_knowledge": 0,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [],
+          "graph": [],
+          "web": [],
+          "sources_count": 0,
+          "status_stages": [
+            "plan",
+            "memory"
+          ],
+          "errors": [],
+          "answer_len": 125,
+          "answer": "我是企业智能知识库的 AI 问答助手，专注于为你提供准确、可信的企业内部知识服务。作为数据平台团队负责人兼产品经理，你可以随时向我咨询制度流程、系统权限、审批关系、术语定义等与工作相关的问题——我会严格依据知识库资料作答，并标注信息来源编号 [n]。",
+          "wall_ms": 6154
+        },
+        {
+          "question": "加班餐补一个月最多能领多少钱？",
+          "session_id": "7514146915382988800",
+          "intent": "knowledge",
+          "suggested_terms": [
+            "加班",
+            "餐补",
+            "金额"
+          ],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 1,
+          "tools": {
+            "retrieve_knowledge": 1,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [
+            "考勤与加班餐补制度"
+          ],
+          "graph": [],
+          "web": [],
+          "sources_count": 1,
+          "status_stages": [
+            "plan",
+            "memory",
+            "grade"
+          ],
+          "errors": [],
+          "answer_len": 26,
+          "answer": "加班餐补每月最多可领取 **600 元** [3]。",
+          "wall_ms": 4349
+        },
+        {
+          "question": "那这个补贴是哪个部门负责发放的？",
+          "session_id": "7514146915382988800",
+          "intent": "knowledge",
+          "suggested_terms": [
+            "加班餐补",
+            "部门",
+            "发放"
+          ],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 1,
+          "tools": {
+            "retrieve_knowledge": 1,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [
+            "考勤与加班餐补制度"
+          ],
+          "graph": [],
+          "web": [],
+          "sources_count": 1,
+          "status_stages": [
+            "plan",
+            "memory",
+            "grade"
+          ],
+          "errors": [],
+          "answer_len": 35,
+          "answer": "知识库中未检索到关于加班餐补具体由哪个部门负责发放的明确信息 [1]。",
+          "wall_ms": 4212
+        }
+      ]
+    },
+    {
+      "name": "B · 多轮：知识 → 关系 → 联网兜底",
+      "kind": "multi",
+      "turns": [
+        {
+          "question": "新员工入职需要准备哪些材料？",
+          "session_id": "7514146977114755072",
+          "intent": "knowledge",
+          "suggested_terms": [
+            "新员工",
+            "入职",
+            "材料"
+          ],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 1,
+          "tools": {
+            "retrieve_knowledge": 1,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [
+            "研发中心新员工入职指南"
+          ],
+          "graph": [],
+          "web": [],
+          "sources_count": 1,
+          "status_stages": [
+            "plan",
+            "memory",
+            "grade"
+          ],
+          "errors": [],
+          "answer_len": 406,
+          "answer": "根据《研发中心新员工入职指南》，新员工入职需准备的材料未在文档中明确列出；但入职首周涉及以下**必须完成事项**，可反推需提前准备或配合提供的材料：\n\n- **账号开通**：需向 IT 服务台提交账号申请（隐含需提供员工编号、姓名、部门等基本信息）[1]；  \n- **环境搭建**：需安装内网 VPN（需公司发放的证书或账号密码），并克隆部门主仓库（需 GitLab 权限，依赖账号已开通）[1]；  \n- **规范学习与代码合并**：需熟悉《研发代码规范》，后续代码合入主干前须完成双人评审（属流程要求，非入职材料）[1]；  \n- **导师对接**：入职当天由部门负责人指定导师，无需新员工准备材料[1]。\n\n知识库中未检索到关于“需本人提前准备的纸质/电子材料清单”（如身份证复印件、学历证明、银行卡信息等）的具体说明。\n\n若需了解通用入职材料（如人事档案类），可补充说明，我可尝试改写检索词进一步查询。",
+          "wall_ms": 9353
+        },
+        {
+          "question": "王工在项目立项流程里负责什么？",
+          "session_id": "7514146977114755072",
+          "intent": "knowledge",
+          "suggested_terms": [
+            "王工",
+            "项目立项流程",
+            "职责"
+          ],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 1,
+          "tools": {
+            "retrieve_knowledge": 1,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [
+            "项目立项与审批流程"
+          ],
+          "graph": [],
+          "web": [],
+          "sources_count": 1,
+          "status_stages": [
+            "plan",
+            "memory",
+            "grade"
+          ],
+          "errors": [],
+          "answer_len": 52,
+          "answer": "王工在项目立项流程中负责**技术评估环节**，具体职责是输出**技术可行性与工作量评估结论** [2]。",
+          "wall_ms": 5156
+        },
+        {
+          "question": "最近有没有关于钢铁行业数字化转型的公开新闻？",
+          "session_id": "7514146977114755072",
+          "intent": "web",
+          "suggested_terms": [
+            "钢铁行业",
+            "数字化转型",
+            "公开新闻"
+          ],
+          "steps": 2,
+          "step_seq": [
+            1,
+            2
+          ],
+          "tool_calls": 1,
+          "tools": {
+            "retrieve_knowledge": 0,
+            "retrieve_graph": 0,
+            "web_search": 1,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [],
+          "graph": [],
+          "web": [
+            "《钢铁行业数字化转型实施指南》发布---世界金属导报",
+            "专家：数智化转型是关乎钢铁行业生存和发展的“必答题”_业界动态_省工业和信息化厅",
+            "关于印发《钢铁行业数字化转型工程三年行动方案（2024- ...",
+            "钢铁行业",
+            "全球法规网-中国商务法规"
+          ],
+          "sources_count": 5,
+          "status_stages": [
+            "plan",
+            "memory",
+            "web"
+          ],
+          "errors": [],
+          "answer_len": 708,
+          "answer": "知识库中未检索到关于“钢铁行业数字化转型”的公开新闻资料。\n\n我将通过公网搜索获取最新相关信息：\n\n根据最新公开信息，近期钢铁行业数字化转型有以下重要进展：\n\n- **政策层面**：2024年1月，工业和信息化部等九部门联合印发《原材料工业数字化转型工作方案（2024–2026年）》，同步发布《钢铁行业数字化转型实施指南》，提出夯实数字化支撑体系、推进智能工厂建设、深化数据要素应用等四方面10项重点任务 [W1][W5]；  \n- **行业行动**：中国钢铁工业协会于2024年印发《钢铁行业数字化转型工程三年行动方案（2024–2026年）》，明确分阶段推进目标与实施路径 [W3]；  \n- **企业实践**：  \n  - 宝钢股份将2024年定为“AI元年”，启动“三千”（千卡算力、千模能力、千人战队）能力建设，截至2026年已建成投运AI场景超600个、智能体超100个，并发布全域智能架构BaoAIArts及《AI场景白皮书（2026版）》[W4]；  \n  - 南京钢铁集团于2025年6月发布行业首个专业大模型“元冶”架构，并于2026年6月召开元冶生态智创发展大会，推出元冶钢铁大模型能力、元冶智联社区及行业AI测评体系等5项成果 [W4]；  \n- **专家观点**：权威专家指出，数智化转型已成为关乎钢铁行业“生存和发展”的“必答题”，人工智能与数据要素正成为驱动高质量发展的新动能 [W2]。\n\n（来源: worldmetals.com.cn, gxt.hlj.gov.cn, chinaisa.org.cn, baike.baidu.com, policy.mofcom.gov.cn）",
+          "wall_ms": 18453
+        }
+      ]
+    },
+    {
+      "name": "C1 · 单轮：纯闲聊（应 chitchat，零工具）",
+      "kind": "single",
+      "turns": [
+        {
+          "question": "今天心情不错，随便聊两句",
+          "session_id": "7514147115451289600",
+          "intent": "chitchat",
+          "suggested_terms": [],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 0,
+          "tools": {
+            "retrieve_knowledge": 0,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [],
+          "graph": [],
+          "web": [],
+          "sources_count": 0,
+          "status_stages": [
+            "plan",
+            "memory"
+          ],
+          "errors": [],
+          "answer_len": 69,
+          "answer": "很高兴听到你今天心情不错！😊  \n希望这份好心情能持续一整天～  \n如果之后有任何工作问题、知识查询，或者想聊点别的，随时欢迎找我聊聊！",
+          "wall_ms": 4360
+        }
+      ]
+    },
+    {
+      "name": "C2 · 单轮：制度知识（应 knowledge + retrieve_knowledge）",
+      "kind": "single",
+      "turns": [
+        {
+          "question": "公司加班有没有餐补？",
+          "session_id": "7514147133683929088",
+          "intent": "knowledge",
+          "suggested_terms": [
+            "加班",
+            "餐补",
+            "制度"
+          ],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 1,
+          "tools": {
+            "retrieve_knowledge": 1,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [
+            "考勤与加班餐补制度"
+          ],
+          "graph": [],
+          "web": [],
+          "sources_count": 1,
+          "status_stages": [
+            "plan",
+            "memory",
+            "grade"
+          ],
+          "errors": [],
+          "answer_len": 221,
+          "answer": "根据《考勤与加班餐补制度》，公司为符合条件的加班员工提供餐补：\n\n- 工作日加班至 20:00 之后，可申请加班餐补，标准为 **30 元/次** [3]；  \n- 周末加班也可享受餐补，按实际发生次数核算，但**每月总额上限为 600 元**，超出部分不予发放 [3]；  \n- 餐补随当月工资一并发放，不另行重复申报 [3]。\n\n因此，公司**有加班餐补**，但需满足时间条件和审批流程（须提前在 OA 提交申请并经直属主管审批）[2]。",
+          "wall_ms": 7463
+        }
+      ]
+    },
+    {
+      "name": "C3 · 单轮：关系型问法但**不提实体名**（图谱子串匹配的边界）",
+      "kind": "single",
+      "turns": [
+        {
+          "question": "项目立项的时候技术这块谁来评估？",
+          "session_id": "7514147164956659712",
+          "intent": "knowledge",
+          "suggested_terms": [
+            "项目立项",
+            "技术评估",
+            "职责"
+          ],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 1,
+          "tools": {
+            "retrieve_knowledge": 1,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [
+            "项目立项与审批流程"
+          ],
+          "graph": [],
+          "web": [],
+          "sources_count": 1,
+          "status_stages": [
+            "plan",
+            "memory",
+            "grade"
+          ],
+          "errors": [],
+          "answer_len": 50,
+          "answer": "根据知识库文档，项目立项时技术评估环节由技术负责人王工负责，输出技术可行性与工作量评估结论 [2]。",
+          "wall_ms": 4209
+        }
+      ]
+    },
+    {
+      "name": "C4 · 单轮：连知识库肯定没有的内容（应走联网 or 明确告知无结果）",
+      "kind": "single",
+      "turns": [
+        {
+          "question": "2026 年诺贝尔物理学奖颁给了谁？",
+          "session_id": "7514147182614679552",
+          "intent": "web",
+          "suggested_terms": [
+            "2026",
+            "诺贝尔物理学奖",
+            "获奖者"
+          ],
+          "steps": 1,
+          "step_seq": [
+            1
+          ],
+          "tool_calls": 0,
+          "tools": {
+            "retrieve_knowledge": 0,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [],
+          "graph": [],
+          "web": [],
+          "sources_count": 0,
+          "status_stages": [
+            "plan",
+            "memory"
+          ],
+          "errors": [],
+          "answer_len": 13,
+          "answer": "知识库中未检索到相关信息。",
+          "wall_ms": 4464
+        }
+      ]
+    },
+    {
+      "name": "D · 单轮：预算压力（一句话四个子问题 + 一个不存在主题）",
+      "kind": "single",
+      "turns": [
+        {
+          "question": "请分别说明：1) 加班餐补标准；2) 法定节假日加班工资怎么算；3) 数据安全里的权限分级；4) 连铸结晶器保护渣的理化指标；另外顺便查一下「量子对撞机维护规程」是怎么规定的。",
+          "session_id": "7514147201354829824",
+          "intent": "knowledge",
+          "suggested_terms": [
+            "加班 餐补 标准",
+            "法定节假日 加班 工资",
+            "数据安全 权限 分级",
+            "连铸结晶器 保护渣 理化指标",
+            "量子对撞机 维护 规程"
+          ],
+          "steps": 2,
+          "step_seq": [
+            1,
+            2
+          ],
+          "tool_calls": 3,
+          "tools": {
+            "retrieve_knowledge": 3,
+            "retrieve_graph": 0,
+            "web_search": 0,
+            "rewrite_query": 0
+          },
+          "budget_exhausted": false,
+          "forced_collapse": false,
+          "retrieved_docs": [
+            "考勤与加班餐补制度",
+            "数据安全与权限管理规范",
+            "吴金远_前端开发_简历_2026",
+            "实习总结",
+            "研发中心新员工入职指南"
+          ],
+          "graph": [],
+          "web": [],
+          "sources_count": 3,
+          "status_stages": [
+            "plan",
+            "memory",
+            "grade",
+            "retrieve"
+          ],
+          "errors": [],
+          "answer_len": 950,
+          "answer": "我将逐一回答您的四个问题，并对最后两项进行检索确认：\n\n1) **加班餐补标准**：工作日加班至20:00之后，可申请加班餐补，标准为30元/次；餐补随当月工资一并发放；每位员工每月加班餐补上限为600元，超出部分不予发放；周末加班餐补按实际发生次数核算，同样计入每月上限 [3]。\n\n2) **法定节假日加班工资计算方式**：法定节假日加班按3倍工资计算，且不安排调休 [3]。\n\n3) **数据安全中的权限分级**：公司文档密级分为三级：  \n　　- **公开**：可对外发布，所有员工可见；  \n　　- **内部**：默认团队内可见，跨团队访问需申请；  \n　　- **机密**：仅项目负责人及以上职级可见，需单独审批 [2]。\n\n4) **连铸结晶器保护渣的理化指标**：知识库中未检索到相关信息。\n\n5) **量子对撞机维护规程**：知识库中未检索到相关信息。\n\n现在我将分别对「连铸结晶器保护渣的理化指标」和「量子对撞机维护规程」进行检索确认：\n\n4) **连铸结晶器保护渣的理化指标**：知识库中未检索到相关信息。\n\n5) **量子对撞机维护规程**：知识库中未检索到相关信息。\n\n其余三项已基于资料 [3] 和 [2] 准确回答（注：原文档中「加班与餐补制度」实际为资料 [1]，编号引用应为 [1]；此前误标为 [3]，现更正如下）：\n\n1) **加班餐补标准**：工作日加班至20:00之后，可申请加班餐补，标准为30元/次；餐补随当月工资一并发放；每位员工每月加班餐补上限为600元，超出部分不予发放；周末加班餐补按实际发生次数核算，同样计入每月上限 [1]。\n\n2) **法定节假日加班工资计算方式**：法定节假日加班按3倍工资计算，且不安排调休 [1]。\n\n3) **数据安全中的权限分级**：公司文档密级分为三级：  \n　　- **公开**：可对外发布，所有员工可见；  \n　　- **内部**：默认团队内可见，跨团队访问需申请；  \n　　- **机密**：仅项目负责人及以上职级可见，需单独审批 [2]。\n\n综上：  \n✅ 问题1、2、3 已依据知识库明确回答；  \n❌ 问题4（连铸结晶器保护渣理化指标）与问题5（量子对撞机维护规程）在知识库中无相关资料，且重检无效。",
+          "wall_ms": 21747
+        }
+      ]
+    }
+  ],
+  "finished_at": "2026-10-09T02:18:40.637Z"
+}

@@ -1,0 +1,197 @@
+{
+  "version": "1.0.0",
+  "description": "合成对照语料查询集（scale-bench.mjs 生成）",
+  "k": 5,
+  "items": [
+    {
+      "id": "sc-term-01",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "DC01 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（DC01）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-02",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "DC03 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（DC03）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-03",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "DC05 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（DC05）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-04",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "DC07 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（DC07）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-05",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "SPCD 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（SPCD）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-06",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "SPCF 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（SPCF）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-07",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "St12 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（St12）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-08",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "St14 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（St14）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-09",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "St16 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（St16）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-10",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "Q215 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（Q215）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-11",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "Q275 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（Q275）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-12",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "HC220Y 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（HC220Y）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-term-13",
+      "group": "term",
+      "intent": "knowledge",
+      "question": "HC300Y 的均热段保温温度和机组速度分别是多少？",
+      "expected_doc_titles": [
+        "冷轧退火工艺规程（HC300Y）"
+      ],
+      "notes": "型号类：语料里存在 26 篇只差牌号的近重复文档，考的是精确词元匹配。"
+    },
+    {
+      "id": "sc-nat-01",
+      "group": "natural",
+      "intent": "knowledge",
+      "question": "冲压时总是裂开，是不是材料太硬了？",
+      "expected_doc_titles": [
+        "板形与力学性能异常处置规程"
+      ],
+      "notes": "口语类：查询用词与答案文档不重合，但字面命中《产品质量事故分级与追责办法》干扰项。"
+    },
+    {
+      "id": "sc-nat-02",
+      "group": "natural",
+      "intent": "knowledge",
+      "question": "板子一成形就变形走样，是不是太硬？",
+      "expected_doc_titles": [
+        "板形与力学性能异常处置规程"
+      ],
+      "notes": "口语类：查询用词与答案文档不重合，但字面命中《产品质量事故分级与追责办法》干扰项。"
+    },
+    {
+      "id": "sc-nat-03",
+      "group": "natural",
+      "intent": "knowledge",
+      "question": "工件加工时边缘展不开，是什么原因？",
+      "expected_doc_titles": [
+        "板形与力学性能异常处置规程"
+      ],
+      "notes": "口语类：查询用词与答案文档不重合，但字面命中《产品质量事故分级与追责办法》干扰项。"
+    },
+    {
+      "id": "sc-nat-04",
+      "group": "natural",
+      "intent": "knowledge",
+      "question": "料太硬加工不动，炉子那边要怎么调？",
+      "expected_doc_titles": [
+        "板形与力学性能异常处置规程"
+      ],
+      "notes": "口语类：查询用词与答案文档不重合，但字面命中《产品质量事故分级与追责办法》干扰项。"
+    },
+    {
+      "id": "sc-nat-05",
+      "group": "natural",
+      "intent": "knowledge",
+      "question": "怎样才能让钢板变得容易成形一些？",
+      "expected_doc_titles": [
+        "板形与力学性能异常处置规程"
+      ],
+      "notes": "口语类：查询用词与答案文档不重合，但字面命中《产品质量事故分级与追责办法》干扰项。"
+    },
+    {
+      "id": "sc-nat-06",
+      "group": "natural",
+      "intent": "knowledge",
+      "question": "抽检试样测出来偏硬，该走哪个流程？",
+      "expected_doc_titles": [
+        "板形与力学性能异常处置规程"
+      ],
+      "notes": "口语类：查询用词与答案文档不重合，但字面命中《产品质量事故分级与追责办法》干扰项。"
+    }
+  ]
+}

@@ -1,0 +1,1497 @@
+{
+  "generatedAt": "2026-10-09T02:07:28.737Z",
+  "base": "http://localhost:3000",
+  "k": 5,
+  "summary": [
+    {
+      "key": "hybrid_rerank",
+      "arm": "RRF 双路 + 精排（生产配置）",
+      "mode": "hybrid",
+      "rerank": true,
+      "recall_at_k": 1,
+      "precision_at_k": 0.19999999999999998,
+      "mrr": 0.85,
+      "hit_at_k": 1,
+      "took_mean": 301,
+      "took_p50": 302,
+      "took_p95": 403,
+      "stages": {
+        "embed_ms": 155.2,
+        "knn_ms": 66.3,
+        "bm25_ms": 15.2,
+        "fuse_ms": 0,
+        "rerank_ms": 79.5
+      },
+      "n": 10
+    },
+    {
+      "key": "hybrid_rrf",
+      "arm": "RRF 双路 仅排序（卡2 baseline）",
+      "mode": "hybrid",
+      "rerank": false,
+      "recall_at_k": 1,
+      "precision_at_k": 0.19999999999999998,
+      "mrr": 0.85,
+      "hit_at_k": 1,
+      "took_mean": 200.1,
+      "took_p50": 195,
+      "took_p95": 259,
+      "stages": {
+        "embed_ms": 132.8,
+        "knn_ms": 67.1,
+        "bm25_ms": 14.5,
+        "fuse_ms": 0,
+        "rerank_ms": 0
+      },
+      "n": 10
+    },
+    {
+      "key": "weighted_rerank",
+      "arm": "加权求和双路 + 精排",
+      "mode": "hybrid_weighted",
+      "rerank": true,
+      "recall_at_k": 1,
+      "precision_at_k": 0.19999999999999998,
+      "mrr": 1,
+      "hit_at_k": 1,
+      "took_mean": 338.4,
+      "took_p50": 284,
+      "took_p95": 744,
+      "stages": {
+        "embed_ms": 190.1,
+        "knn_ms": 67.3,
+        "bm25_ms": 14.5,
+        "fuse_ms": 0,
+        "rerank_ms": 81
+      },
+      "n": 10
+    },
+    {
+      "key": "weighted_rrf",
+      "arm": "加权求和双路 仅排序",
+      "mode": "hybrid_weighted",
+      "rerank": false,
+      "recall_at_k": 1,
+      "precision_at_k": 0.19999999999999998,
+      "mrr": 1,
+      "hit_at_k": 1,
+      "took_mean": 223.4,
+      "took_p50": 198,
+      "took_p95": 339,
+      "stages": {
+        "embed_ms": 160.5,
+        "knn_ms": 62.6,
+        "bm25_ms": 15.1,
+        "fuse_ms": 0.1,
+        "rerank_ms": 0
+      },
+      "n": 10
+    },
+    {
+      "key": "bm25_rerank",
+      "arm": "纯 BM25 + 精排（卡1 baseline）",
+      "mode": "bm25",
+      "rerank": true,
+      "recall_at_k": 1,
+      "precision_at_k": 0.19999999999999998,
+      "mrr": 1,
+      "hit_at_k": 1,
+      "took_mean": 95.3,
+      "took_p50": 92,
+      "took_p95": 133,
+      "stages": {
+        "embed_ms": 0,
+        "knn_ms": 0,
+        "bm25_ms": 14.1,
+        "fuse_ms": 0,
+        "rerank_ms": 81.2
+      },
+      "n": 10
+    },
+    {
+      "key": "bm25_rrf",
+      "arm": "纯 BM25 仅排序",
+      "mode": "bm25",
+      "rerank": false,
+      "recall_at_k": 1,
+      "precision_at_k": 0.19999999999999998,
+      "mrr": 1,
+      "hit_at_k": 1,
+      "took_mean": 14.5,
+      "took_p50": 11,
+      "took_p95": 24,
+      "stages": {
+        "embed_ms": 0,
+        "knn_ms": 0,
+        "bm25_ms": 14.3,
+        "fuse_ms": 0.1,
+        "rerank_ms": 0
+      },
+      "n": 10
+    },
+    {
+      "key": "knn_rerank",
+      "arm": "纯向量 KNN + 精排",
+      "mode": "knn",
+      "rerank": true,
+      "recall_at_k": 0.7,
+      "precision_at_k": 0.13999999999999999,
+      "mrr": 0.7,
+      "hit_at_k": 0.7,
+      "took_mean": 301.5,
+      "took_p50": 305,
+      "took_p95": 354,
+      "stages": {
+        "embed_ms": 141.4,
+        "knn_ms": 65.4,
+        "bm25_ms": 0,
+        "fuse_ms": 0,
+        "rerank_ms": 94.7
+      },
+      "n": 10
+    },
+    {
+      "key": "knn_rrf",
+      "arm": "纯向量 KNN 仅排序",
+      "mode": "knn",
+      "rerank": false,
+      "recall_at_k": 0.7,
+      "precision_at_k": 0.13999999999999999,
+      "mrr": 0.7,
+      "hit_at_k": 0.7,
+      "took_mean": 194.9,
+      "took_p50": 182,
+      "took_p95": 280,
+      "stages": {
+        "embed_ms": 130.4,
+        "knn_ms": 64.5,
+        "bm25_ms": 0,
+        "fuse_ms": 0,
+        "rerank_ms": 0
+      },
+      "n": 10
+    }
+  ],
+  "rows": [
+    {
+      "id": "qa-001",
+      "q": "公司加班有餐补吗？",
+      "expected": "考勤与加班餐补制度",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 306,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "数据安全与权限管理规范",
+          "吴金远_前端开发_简历_2026",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 190,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "吴金远_前端开发_简历_2026",
+          "数据安全与权限管理规范",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 284,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "吴金远_前端开发_简历_2026",
+          "连铸工艺规程·二次冷却制度（第 1 分册）",
+          "连铸工艺规程·二次冷却制度（第 15 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 234,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "吴金远_前端开发_简历_2026",
+          "连铸工艺规程·二次冷却制度（第 1 分册）",
+          "连铸工艺规程·二次冷却制度（第 15 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 76,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "实习总结",
+          "数据安全与权限管理规范",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 8,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "实习总结",
+          "数据安全与权限管理规范",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 314,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "连铸工艺规程·二次冷却制度（第 1 分册）",
+          "连铸工艺规程·二次冷却制度（第 15 分册）",
+          "连铸工艺规程·二次冷却制度（第 12 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 176,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "连铸工艺规程·二次冷却制度（第 1 分册）",
+          "连铸工艺规程·二次冷却制度（第 15 分册）",
+          "连铸工艺规程·二次冷却制度（第 12 分册）"
+        ]
+      }
+    },
+    {
+      "id": "qa-002",
+      "q": "加班餐补一个月最多能领多少钱？",
+      "expected": "考勤与加班餐补制度",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 308,
+        "top1": "连铸工艺规程·钢包滑板（第 1 分册）",
+        "topTitles": [
+          "连铸工艺规程·钢包滑板（第 1 分册）",
+          "考勤与加班餐补制度",
+          "连铸工艺规程·钢包滑板（第 12 分册）",
+          "连铸工艺规程·钢包滑板（第 5 分册）",
+          "研发中心新员工入职指南"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 176,
+        "top1": "连铸工艺规程·钢包滑板（第 1 分册）",
+        "topTitles": [
+          "连铸工艺规程·钢包滑板（第 1 分册）",
+          "考勤与加班餐补制度",
+          "连铸工艺规程·钢包滑板（第 5 分册）",
+          "研发中心新员工入职指南",
+          "连铸工艺规程·钢包滑板（第 12 分册）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 313,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·钢包滑板（第 1 分册）",
+          "连铸工艺规程·钢包滑板（第 5 分册）",
+          "研发中心新员工入职指南",
+          "连铸工艺规程·钢包滑板（第 12 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 188,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·钢包滑板（第 1 分册）",
+          "连铸工艺规程·钢包滑板（第 5 分册）",
+          "研发中心新员工入职指南",
+          "连铸工艺规程·钢包滑板（第 12 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 84,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 6,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 247,
+        "top1": "连铸工艺规程·钢包滑板（第 1 分册）",
+        "topTitles": [
+          "连铸工艺规程·钢包滑板（第 1 分册）",
+          "连铸工艺规程·钢包滑板（第 5 分册）",
+          "研发中心新员工入职指南",
+          "连铸工艺规程·钢包滑板（第 12 分册）",
+          "连铸工艺规程·连铸坯表面清理（第 5 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 189,
+        "top1": "连铸工艺规程·钢包滑板（第 1 分册）",
+        "topTitles": [
+          "连铸工艺规程·钢包滑板（第 1 分册）",
+          "连铸工艺规程·钢包滑板（第 5 分册）",
+          "研发中心新员工入职指南",
+          "连铸工艺规程·钢包滑板（第 12 分册）",
+          "连铸工艺规程·连铸坯表面清理（第 5 分册）"
+        ]
+      }
+    },
+    {
+      "id": "qa-003",
+      "q": "法定节假日加班的工资怎么计算？",
+      "expected": "考勤与加班餐补制度",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 403,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·二次冷却制度（第 3 分册）",
+          "吴金远_前端开发_简历_2026",
+          "连铸工艺规程·二次冷却制度（第 12 分册）",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 187,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·二次冷却制度（第 3 分册）",
+          "吴金远_前端开发_简历_2026",
+          "连铸工艺规程·二次冷却制度（第 12 分册）",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 355,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "吴金远_前端开发_简历_2026",
+          "实习总结",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 339,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "吴金远_前端开发_简历_2026",
+          "实习总结",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 108,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "吴金远_前端开发_简历_2026",
+          "实习总结",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 18,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "吴金远_前端开发_简历_2026",
+          "吴金远_前端开发_简历_2026",
+          "实习总结",
+          "吴金远_前端开发_简历_2026"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 265,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·二次冷却制度（第 3 分册）",
+          "连铸工艺规程·二次冷却制度（第 12 分册）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）",
+          "连铸工艺规程·二次冷却制度（第 4 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 198,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·二次冷却制度（第 12 分册）",
+          "连铸工艺规程·二次冷却制度（第 3 分册）",
+          "连铸工艺规程·二次冷却制度（第 4 分册）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）"
+        ]
+      }
+    },
+    {
+      "id": "qa-004",
+      "q": "加班需要提前走什么流程吗？",
+      "expected": "考勤与加班餐补制度",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 259,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·电磁搅拌（第 2 分册）",
+          "连铸工艺规程·电磁搅拌（第 10 分册）",
+          "连铸工艺规程·电磁搅拌（第 1 分册）",
+          "连铸工艺规程·电磁搅拌（第 14 分册）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 197,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·电磁搅拌（第 2 分册）",
+          "连铸工艺规程·电磁搅拌（第 10 分册）",
+          "连铸工艺规程·电磁搅拌（第 1 分册）",
+          "连铸工艺规程·电磁搅拌（第 14 分册）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 744,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "项目立项与审批流程",
+          "连铸工艺规程·电磁搅拌（第 1 分册）",
+          "连铸工艺规程·电磁搅拌（第 6 分册）",
+          "连铸工艺规程·电磁搅拌（第 14 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 216,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "项目立项与审批流程",
+          "连铸工艺规程·电磁搅拌（第 1 分册）",
+          "连铸工艺规程·电磁搅拌（第 6 分册）",
+          "连铸工艺规程·电磁搅拌（第 14 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 92,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "项目立项与审批流程",
+          "实习总结",
+          "实习总结",
+          "实习总结"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 23,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "项目立项与审批流程",
+          "实习总结",
+          "实习总结",
+          "实习总结"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 282,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·电磁搅拌（第 1 分册）",
+          "连铸工艺规程·电磁搅拌（第 6 分册）",
+          "连铸工艺规程·电磁搅拌（第 14 分册）",
+          "连铸工艺规程·电磁搅拌（第 5 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 280,
+        "top1": "考勤与加班餐补制度",
+        "topTitles": [
+          "考勤与加班餐补制度",
+          "连铸工艺规程·电磁搅拌（第 1 分册）",
+          "连铸工艺规程·电磁搅拌（第 6 分册）",
+          "连铸工艺规程·电磁搅拌（第 14 分册）",
+          "连铸工艺规程·电磁搅拌（第 5 分册）"
+        ]
+      }
+    },
+    {
+      "id": "qa-005",
+      "q": "新员工入职第一周需要完成哪些事情？",
+      "expected": "研发中心新员工入职指南",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 280,
+        "top1": "表面缺陷判定与处置标准（划伤）",
+        "topTitles": [
+          "表面缺陷判定与处置标准（划伤）",
+          "研发中心新员工入职指南",
+          "表面缺陷判定与处置标准（裂纹）",
+          "实习总结",
+          "表面缺陷判定与处置标准（压痕）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 199,
+        "top1": "表面缺陷判定与处置标准（划伤）",
+        "topTitles": [
+          "表面缺陷判定与处置标准（划伤）",
+          "研发中心新员工入职指南",
+          "表面缺陷判定与处置标准（裂纹）",
+          "实习总结",
+          "表面缺陷判定与处置标准（压痕）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 266,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "表面缺陷判定与处置标准（划伤）",
+          "表面缺陷判定与处置标准（裂纹）",
+          "表面缺陷判定与处置标准（压痕）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 177,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "表面缺陷判定与处置标准（划伤）",
+          "表面缺陷判定与处置标准（裂纹）",
+          "表面缺陷判定与处置标准（压痕）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 104,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "实习总结",
+          "吴金远_前端开发_简历_2026",
+          "实习总结",
+          "实习总结"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 8,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "实习总结",
+          "吴金远_前端开发_简历_2026",
+          "实习总结",
+          "实习总结"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 320,
+        "top1": "表面缺陷判定与处置标准（裂纹）",
+        "topTitles": [
+          "表面缺陷判定与处置标准（裂纹）",
+          "表面缺陷判定与处置标准（划伤）",
+          "表面缺陷判定与处置标准（压痕）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）",
+          "产品质量事故分级与追责办法"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 182,
+        "top1": "表面缺陷判定与处置标准（裂纹）",
+        "topTitles": [
+          "表面缺陷判定与处置标准（裂纹）",
+          "表面缺陷判定与处置标准（划伤）",
+          "表面缺陷判定与处置标准（压痕）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）",
+          "产品质量事故分级与追责办法"
+        ]
+      }
+    },
+    {
+      "id": "qa-006",
+      "q": "新员工的导师制度是如何安排的？",
+      "expected": "研发中心新员工入职指南",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 231,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "考勤与加班餐补制度",
+          "连铸工艺规程·二次冷却制度（第 12 分册）",
+          "连铸工艺规程·二次冷却制度（第 6 分册）",
+          "连铸工艺规程·二次冷却制度（第 15 分册）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 203,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "考勤与加班餐补制度",
+          "连铸工艺规程·二次冷却制度（第 12 分册）",
+          "连铸工艺规程·二次冷却制度（第 6 分册）",
+          "连铸工艺规程·二次冷却制度（第 15 分册）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 274,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "考勤与加班餐补制度",
+          "数据安全与权限管理规范",
+          "表面缺陷判定与处置标准（麻点）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 231,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "考勤与加班餐补制度",
+          "数据安全与权限管理规范",
+          "表面缺陷判定与处置标准（麻点）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 98,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "考勤与加班餐补制度",
+          "板形与力学性能异常处置规程",
+          "实习总结",
+          "连铸工艺规程·二次冷却制度（第 6 分册）"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 24,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "考勤与加班餐补制度",
+          "板形与力学性能异常处置规程",
+          "实习总结",
+          "连铸工艺规程·二次冷却制度（第 6 分册）"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 305,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "考勤与加班餐补制度",
+          "数据安全与权限管理规范",
+          "表面缺陷判定与处置标准（麻点）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 175,
+        "top1": "研发中心新员工入职指南",
+        "topTitles": [
+          "研发中心新员工入职指南",
+          "考勤与加班餐补制度",
+          "数据安全与权限管理规范",
+          "表面缺陷判定与处置标准（麻点）",
+          "连铸工艺规程·二次冷却制度（第 1 分册）"
+        ]
+      }
+    },
+    {
+      "id": "qa-007",
+      "q": "公司的文档密级分为哪几级？",
+      "expected": "数据安全与权限管理规范",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 296,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC04）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC03）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 242,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC04）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC03）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 347,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "实习总结",
+          "实习总结",
+          "吴金远_前端开发_简历_2026",
+          "考勤与加班餐补制度"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 179,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "实习总结",
+          "实习总结",
+          "吴金远_前端开发_简历_2026",
+          "考勤与加班餐补制度"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 91,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "实习总结",
+          "实习总结",
+          "吴金远_前端开发_简历_2026",
+          "考勤与加班餐补制度"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 18,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "实习总结",
+          "实习总结",
+          "吴金远_前端开发_简历_2026",
+          "考勤与加班餐补制度"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 253,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC04）",
+          "连铸工艺规程·连铸坯低倍检验（第 14 分册）",
+          "冷轧退火工艺规程（DC01）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 177,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC05）",
+          "冷轧退火工艺规程（DC04）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC03）"
+        ]
+      }
+    },
+    {
+      "id": "qa-008",
+      "q": "机密文档哪些人可以查看？",
+      "expected": "数据安全与权限管理规范",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 303,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC01）",
+          "实习总结",
+          "冷轧退火工艺规程（DC04）",
+          "实习总结"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 259,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC01）",
+          "实习总结",
+          "冷轧退火工艺规程（DC04）",
+          "实习总结"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 295,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC04）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 276,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC04）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 73,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "实习总结",
+          "实习总结",
+          "实习总结"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 5,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "实习总结",
+          "实习总结",
+          "实习总结"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 349,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC04）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 195,
+        "top1": "数据安全与权限管理规范",
+        "topTitles": [
+          "数据安全与权限管理规范",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC04）",
+          "冷轧退火工艺规程（DC01）",
+          "冷轧退火工艺规程（DC06）"
+        ]
+      }
+    },
+    {
+      "id": "qa-009",
+      "q": "项目立项预算是 80 万，需要谁审批？",
+      "expected": "项目立项与审批流程",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 322,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "连铸工艺规程·火焰切割（第 8 分册）",
+          "实习总结",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "数据安全与权限管理规范"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 195,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "连铸工艺规程·火焰切割（第 8 分册）",
+          "实习总结",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "数据安全与权限管理规范"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 226,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "实习总结",
+          "数据安全与权限管理规范",
+          "吴金远_前端开发_简历_2026",
+          "连铸工艺规程·火焰切割（第 8 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 198,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "实习总结",
+          "数据安全与权限管理规范",
+          "吴金远_前端开发_简历_2026",
+          "连铸工艺规程·火焰切割（第 8 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 94,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "实习总结",
+          "数据安全与权限管理规范",
+          "吴金远_前端开发_简历_2026",
+          "实习总结"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 11,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "实习总结",
+          "数据安全与权限管理规范",
+          "吴金远_前端开发_简历_2026",
+          "实习总结"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 326,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "连铸工艺规程·火焰切割（第 8 分册）",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "连铸工艺规程·火焰切割（第 18 分册）",
+          "连铸工艺规程·连铸机对弧（第 8 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 181,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "连铸工艺规程·火焰切割（第 8 分册）",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "连铸工艺规程·火焰切割（第 18 分册）",
+          "连铸工艺规程·连铸机对弧（第 8 分册）"
+        ]
+      }
+    },
+    {
+      "id": "qa-010",
+      "q": "项目立项中的技术评估由谁负责？",
+      "expected": "项目立项与审批流程",
+      "hybrid_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 302,
+        "top1": "连铸工艺规程·保护浇注（第 8 分册）",
+        "topTitles": [
+          "连铸工艺规程·保护浇注（第 8 分册）",
+          "项目立项与审批流程",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "实习总结",
+          "连铸工艺规程·连铸坯低倍检验（第 8 分册）"
+        ]
+      },
+      "hybrid_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 0.5,
+        "hit_at_k": 1,
+        "first_hit_rank": 2,
+        "tookMs": 153,
+        "top1": "连铸工艺规程·保护浇注（第 8 分册）",
+        "topTitles": [
+          "连铸工艺规程·保护浇注（第 8 分册）",
+          "项目立项与审批流程",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "实习总结",
+          "连铸工艺规程·连铸坯低倍检验（第 8 分册）"
+        ]
+      },
+      "weighted_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 280,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "连铸工艺规程·保护浇注（第 8 分册）",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "连铸工艺规程·连铸坯低倍检验（第 8 分册）",
+          "连铸工艺规程·连铸机对弧（第 8 分册）"
+        ]
+      },
+      "weighted_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 196,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "连铸工艺规程·保护浇注（第 8 分册）",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "连铸工艺规程·连铸坯低倍检验（第 8 分册）",
+          "连铸工艺规程·连铸机对弧（第 8 分册）"
+        ]
+      },
+      "bm25_rerank": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 133,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "实习总结",
+          "实习总结",
+          "吴金远_前端开发_简历_2026",
+          "实习总结"
+        ]
+      },
+      "bm25_rrf": {
+        "recall_at_k": 1,
+        "precision_at_k": 0.2,
+        "mrr": 1,
+        "hit_at_k": 1,
+        "first_hit_rank": 1,
+        "tookMs": 24,
+        "top1": "项目立项与审批流程",
+        "topTitles": [
+          "项目立项与审批流程",
+          "实习总结",
+          "实习总结",
+          "吴金远_前端开发_简历_2026",
+          "实习总结"
+        ]
+      },
+      "knn_rerank": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 354,
+        "top1": "连铸工艺规程·保护浇注（第 8 分册）",
+        "topTitles": [
+          "连铸工艺规程·保护浇注（第 8 分册）",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "连铸工艺规程·连铸坯低倍检验（第 8 分册）",
+          "连铸工艺规程·连铸机对弧（第 8 分册）",
+          "连铸工艺规程·连铸坯表面清理（第 8 分册）"
+        ]
+      },
+      "knn_rrf": {
+        "recall_at_k": 0,
+        "precision_at_k": 0,
+        "mrr": 0,
+        "hit_at_k": 0,
+        "first_hit_rank": null,
+        "tookMs": 196,
+        "top1": "连铸工艺规程·保护浇注（第 8 分册）",
+        "topTitles": [
+          "连铸工艺规程·保护浇注（第 8 分册）",
+          "连铸工艺规程·去毛刺机（第 8 分册）",
+          "连铸工艺规程·连铸坯低倍检验（第 8 分册）",
+          "连铸工艺规程·连铸机对弧（第 8 分册）",
+          "连铸工艺规程·连铸坯表面清理（第 8 分册）"
+        ]
+      }
+    }
+  ]
+}

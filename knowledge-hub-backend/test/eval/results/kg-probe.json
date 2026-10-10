@@ -1,0 +1,1111 @@
+{
+  "generatedAt": "2026-10-09T02:20:24.592Z",
+  "overview": {
+    "nodes": 188,
+    "edges": 327,
+    "byKind": {
+      "document": 6,
+      "entity": 182
+    },
+    "edgeByKind": {
+      "related": 139,
+      "mentions": 188
+    },
+    "typeDist": [
+      {
+        "type": "tech",
+        "count": 96
+      },
+      {
+        "type": "term",
+        "count": 63
+      },
+      {
+        "type": "org",
+        "count": 9
+      },
+      {
+        "type": "person",
+        "count": 8
+      },
+      {
+        "type": "location",
+        "count": 3
+      },
+      {
+        "type": "other",
+        "count": 3
+      }
+    ],
+    "stats": {
+      "docNodes": 6,
+      "entities": 182,
+      "relatedEdges": 139,
+      "mentionEdges": 188,
+      "tags": 0
+    }
+  },
+  "relTypes": [
+    {
+      "rel": "MENTIONS",
+      "count": 242
+    },
+    {
+      "rel": "RELATED_TO",
+      "count": 139
+    },
+    {
+      "rel": "HAS_CHUNK",
+      "count": 33
+    }
+  ],
+  "perDoc": [
+    {
+      "doc": "吴金远_前端开发_简历_2026",
+      "entities": 105,
+      "related_edges": 88
+    },
+    {
+      "doc": "实习总结",
+      "entities": 64,
+      "related_edges": 46
+    },
+    {
+      "doc": "研发中心新员工入职指南",
+      "entities": 11,
+      "related_edges": 9
+    },
+    {
+      "doc": "数据安全与权限管理规范",
+      "entities": 2,
+      "related_edges": 5
+    },
+    {
+      "doc": "考勤与加班餐补制度",
+      "entities": 2,
+      "related_edges": 1
+    },
+    {
+      "doc": "项目立项与审批流程",
+      "entities": 4,
+      "related_edges": 1
+    }
+  ],
+  "sampleRel": [
+    {
+      "a": "vue-ueditor-wrap",
+      "rel": "使用",
+      "b": "Vue"
+    },
+    {
+      "a": "el-form",
+      "rel": "使用",
+      "b": "Element Plus"
+    },
+    {
+      "a": "Vue",
+      "rel": "使用",
+      "b": "Element Plus"
+    },
+    {
+      "a": "el-form",
+      "rel": "包含",
+      "b": "Vxe-table"
+    },
+    {
+      "a": "v-if",
+      "rel": "控制",
+      "b": "vue-ueditor-wrap"
+    },
+    {
+      "a": "v-show",
+      "rel": "控制",
+      "b": "vue-ueditor-wrap"
+    },
+    {
+      "a": "客户分布分析页面",
+      "rel": "包含",
+      "b": "饼图"
+    },
+    {
+      "a": "Echarts",
+      "rel": "支持",
+      "b": "饼图"
+    },
+    {
+      "a": "销售数据分析页面",
+      "rel": "包含",
+      "b": "柱状图"
+    },
+    {
+      "a": "Echarts",
+      "rel": "支持",
+      "b": "柱状图"
+    },
+    {
+      "a": "Echarts",
+      "rel": "支持",
+      "b": "折线图"
+    },
+    {
+      "a": "网站流量趋势分析页面",
+      "rel": "包含",
+      "b": "折线图"
+    },
+    {
+      "a": "Element Plus",
+      "rel": "包含",
+      "b": "El-menu"
+    },
+    {
+      "a": "Element Plus",
+      "rel": "包含",
+      "b": "El-header"
+    },
+    {
+      "a": "Element Plus",
+      "rel": "包含",
+      "b": "El-row"
+    }
+  ],
+  "latency": [
+    {
+      "name": "GET /kg/search?q=王工",
+      "n": 20,
+      "mean": 36.2,
+      "p50": 36,
+      "p95": 39,
+      "max": 42,
+      "error": null
+    },
+    {
+      "name": "GET /kg/nodes?label=entity&q=王工",
+      "n": 20,
+      "mean": 37.7,
+      "p50": 30,
+      "p95": 60,
+      "max": 68,
+      "error": null
+    },
+    {
+      "name": "GET /kg/edges?rel=related_to&entity=王工",
+      "n": 20,
+      "mean": 30.05,
+      "p50": 29,
+      "p95": 38,
+      "max": 40,
+      "error": null
+    },
+    {
+      "name": "GET /kg/overview?limit=2000",
+      "n": 20,
+      "mean": 55.15,
+      "p50": 54,
+      "p95": 61,
+      "max": 69,
+      "error": null
+    },
+    {
+      "name": "GET /rag/search?q=王工（对照：文档侧）",
+      "n": 20,
+      "mean": 336.3,
+      "p50": 309,
+      "p95": 418,
+      "max": 499,
+      "error": null
+    }
+  ],
+  "samples": [
+    {
+      "query": "Vue",
+      "expect": "hit",
+      "desc": "技术类实体：简历文档里 Vue 的关系被抽出来了",
+      "rag": {
+        "items": [
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 0,
+            "content": "\\# 实习总结\n\n\\## 引言\n\n时光荏苒，我的实习生活已接近尾声。这次实习是我从校园走向社会的重要过渡，让我对软件开发行业有了直观且深入的认识。在实习期间，我积极投身于项目开发，将所学理论知识与实践相结合，在技术能力、问题解决能力以及团队协作能力等方面都取得了显著提升。本文将对我的实习经历进行全面、细致的总结，包括在实习期间所学的知识、参与的项目、遇到的问题及解决方案，以及对未来工作的展望，以此记录下这段宝贵的成长历程，也为未来的职业发展提供参考。\n\n\\## 指导老师：曹夏琳、余萍萍\n\n\\## 技术学习\n\n在实习期间，我深入学习了多种技术，为项目开发奠定了坚实基础。\n\n在前端框架方面，我重点掌握了 Vue 及其组件库 Element Plus。Vue 的响应式数据绑定和组件化开发模式极大地提高了开发效率，让我能够更专注于业务逻辑的实现。Element Plus 丰富的组件库，如按钮、表单、布局组件等，为我提供了便捷的界面构建工具。通过实际项目练习，我熟练运用它们构建了多个页面的用户界面，如登录页面、数据展示页面等，使页面既美观又具有良好的交互性。",
+            "score": 0.031754032258064516,
+            "rank": 1
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 1,
+            "content": "## 专业技能\n\n前端核心：Vue3 + TypeScript、Composition API、Pinia、Vue Router；Element-Plus、VxeTable；UniApp 小程序与跨端开发\n\n工程化构建：Webpack5 / Vite；自研热更新服务替代 webpack-dev-server；多环境差异化构建、多线程打包、TreeShaking、代码分割\n\n性能优化：路由懒加载、组件动态导入、HTTP/2、虚拟滚动、Gzip 压缩、Nginx 静态资源缓存\n\n服务端 / BFF：Node.js + Koa；Loader 模块自动加载、中间件体系、日志分级落盘、全局错误捕获、API 参数校验、请求签名验证；Docker、CI/CD 自动化流水线\n\nAI 应用开发：LLM 多模型接入（DeepSeek / OpenAI）、SSE 流式输出、Tool Calling 工具体系、MCP 协议、Prompt 规范与参数校验、多模态输入\n\n计算机基础：HTTP/HTTPS、TCP/IP 网络协议；数据结构与算法、常见设计模式",
+            "score": 0.03149801587301587,
+            "rank": 2
+          },
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 1,
+            "content": "同时，我也学习了 Vxe-table 组件。它在表格功能上表现出色，提供了数据筛选、编辑、排序、分页等丰富功能。在处理大量表格数据时，Vxe-table 的虚拟滚动技术有效提升了渲染性能，确保了页面的流畅性。我利用这些功能实现了多个复杂的表格应用场景，如数据统计报表、用户信息管理表格等，极大地提升了数据展示与交互的效率。\n\n此外，我还了解了富文本编辑器 vue-ueditor-wrap 的使用。在需要用户输入丰富文本内容的场景下，如文章发布、产品描述等，vue-ueditor-wrap 提供了直观的编辑界面和强大的文本处理功能，为项目中的文本编辑功能提供了有力支持。",
+            "score": 0.030834914611005692,
+            "rank": 3
+          },
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 4,
+            "content": "在页面布局与组件运用方面，我使用 Vue 及 Element Plus 构建了项目的整体布局。首先，我设计并实现了侧边栏导航，通过 Element Plus 的菜单组件（El-menu）和图标组件，创建了一个可折叠、可展开的侧边栏，使用户能够方便地在不同功能模块之间切换。同时，我使用头部导航组件（El-header）展示项目的 logo、用户信息和快捷操作按钮，增强了页面的统一性和美观性。在页面主体部分，我根据不同页面的需求，运用 Element Plus 的布局组件（如 El-row、El-col）进行灵活布局，合理设置 CSS 样式，使页面能够自适应不同屏幕尺寸，无论是电脑端的大屏幕还是移动设备的小屏幕，都能为用户提供更舒适的视觉体验。此外，我也运用了多种组件，如表单组件（El-form、Input、Select 等）、表格组件（Vxe-table）等，实现了数据的输入、展示与交互功能。例如，在用户注册页面，我使用了表单组件创建了包含用户名、密码、邮箱等输入项的表单，并设置了相应的验证规则，确保用户输入的数据准确无误；在数据展示页面，我利用 Vxe-table",
+            "score": 0.030679156908665108,
+            "rank": 4
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 8,
+            "content": "## 软星 CRM 客户管理中台 核心开发（前端）\n\n2024.12 – 2026.04\n\n项目描述：SaaS 化客户管理中台，打通 WMS（仓储）、ERP（进销存）、CRM（客户）三端数据链路，支撑 200+ 企业客户的定制化需求。\n\n技术栈：Vue3、TypeScript、Element-Plus、VxeTable、Pinia\n\n大数据表格：深度封装 VxeTable 增强组件，实现虚拟滚动渲染，10 万+ 数据量下滚动流畅；开发通用表格配置器，支持动态列配置、复杂公式计算、Excel 样式导出，业务复用率达 90%\n\n单点登录：采用双 Token 机制（Access Token + Refresh Token）实现跨系统 SSO，设计 JWT 令牌自动续期机制，用户登录耗时降低 65%\n\n性能优化：路由懒加载 + 组件动态导入 + HTTP/2，首屏加载时间由 4.2s 优化至 1.1s；Tree Shaking + Gzip 压缩 +Nginx 缓存策略，构建产物体积减少 68%",
+            "score": 0.03007688828584351,
+            "rank": 5
+          }
+        ],
+        "took_ms": 281,
+        "mode": "hybrid",
+        "stages": {
+          "embed_ms": 129,
+          "knn_ms": 55,
+          "bm25_ms": 7,
+          "fuse_ms": 0,
+          "rerank_ms": 97
+        }
+      },
+      "kg": {
+        "q": "Vue",
+        "docs": {
+          "total": 2,
+          "page": 1,
+          "pageSize": 5,
+          "items": [
+            {
+              "doc_id": "7504813748293472256",
+              "title": "吴金远_前端开发_简历_2026",
+              "summary": "吴金远\n\n前端开发工程师 · AI 应用 / Agent 方向\n\n求职意向：前端开发工程师（AI 应用 / Agent 方向）  工作经验：2 年  期望城市：杭州 / 上海 / 深圳\n\n 专业技能\n\n前端核心：Vue3 + TypeScript、Composition API、Pinia、Vue Router；ElementPlus、VxeTable；UniApp 小程序与跨端开发\n\n工程化构建",
+              "word_count": 2722,
+              "publish_time": "2026-09-15T03:21:42.615Z",
+              "score": 1.8562601,
+              "highlight": {
+                "summary": [
+                  "吴金远\n\n前端开发工程师 · AI 应用 / Agent 方向\n\n求职意向：前端开发工程师（AI 应用 / Agent 方向）  工作经验：2 年  期望城市：杭州 / 上海 / 深圳\n\n 专业技能\n\n前端核心：<em>Vue</em>3 + TypeScript、Composition API、Pinia、<em>Vue</em> Router；ElementPlus、VxeTable；UniApp 小程序与跨端开发\n\n工程化构建"
+                ],
+                "content": [
+                  "## 吴金远\n\n前端开发工程师 · AI 应用 / Agent 方向\n\n求职意向：前端开发工程师（AI 应用 / Agent 方向） | 工作经验：2 年 | 期望城市：杭州 / 上海 / 深圳\n\n## 专业技能\n\n前端核心：<em>Vue</em>3 + TypeScript",
+                  "、Composition API、Pinia、<em>Vue</em> Router；Element-Plus、VxeTable；UniApp 小程序与跨端开发\n\n工程化构建：Webpack5 / Vite；自研热更新服务替代 webpack-dev-server",
+                  "技术栈：<em>Vue</em>3、TypeScript、LLM（DeepSeek / OpenAI）、SSE、Tool Calling、MCP\n\n模型接入层：封装 AI Chat SDK，抽象统一的多模型接入层，支持 DeepSeek / OpenAI 切换"
+                ]
+              }
+            },
+            {
+              "doc_id": "7506896171932061696",
+              "title": "实习总结",
+              "summary": "\\ 实习总结\n\n\\ 引言\n\n时光荏苒，我的实习生活已接近尾声。这次实习是我从校园走向社会的重要过渡，让我对软件开发行业有了直观且深入的认识。在实习期间，我积极投身于项目开发，将所学理论知识与实践相结合，在技术能力、问题解决能力以及团队协作能力等方面都取得了显著提升。本文将对我的实习经历进行全面、细致的总结，包括在实习期间所学的知识、参与的项目、遇到的问题及解决方案，以及对未来工作的展望，以此记录下",
+              "word_count": 5823,
+              "publish_time": "2026-09-19T02:05:57.661Z",
+              "score": 1.6823589,
+              "highlight": {
+                "content": [
+                  "在前端框架方面，我重点掌握了 <em>Vue</em> 及其组件库 Element Plus。<em>Vue</em> 的响应式数据绑定和组件化开发模式极大地提高了开发效率，让我能够更专注于业务逻辑的实现。",
+                  "此外，我还了解了富文本编辑器 <em>vue</em>-ueditor-wrap 的使用。",
+                  "在页面布局与组件运用方面，我使用 <em>Vue</em> 及 Element Plus 构建了项目的整体布局。"
+                ]
+              }
+            }
+          ]
+        },
+        "entities": [
+          {
+            "name": "Vue",
+            "type": "tech",
+            "description": null
+          },
+          {
+            "name": "Vue Router",
+            "type": "tech",
+            "description": null
+          },
+          {
+            "name": "Vue3",
+            "type": "tech",
+            "description": null
+          },
+          {
+            "name": "vue-ueditor-wrap",
+            "type": "tech",
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "sourceName": "Vue",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Element Plus",
+            "targetType": "tech"
+          },
+          {
+            "sourceName": "Vue3",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "TypeScript",
+            "targetType": "tech"
+          },
+          {
+            "sourceName": "Vue3",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Pinia",
+            "targetType": "tech"
+          },
+          {
+            "sourceName": "Vue3",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Vue Router",
+            "targetType": "tech"
+          },
+          {
+            "sourceName": "vue-ueditor-wrap",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Vue",
+            "targetType": "tech"
+          }
+        ],
+        "docEdges": [
+          {
+            "docId": "7504813748293472256",
+            "title": "吴金远_前端开发_简历_2026",
+            "entityName": "Vue Router",
+            "entityType": "tech"
+          },
+          {
+            "docId": "7504813748293472256",
+            "title": "吴金远_前端开发_简历_2026",
+            "entityName": "Vue3",
+            "entityType": "tech"
+          },
+          {
+            "docId": "7506896171932061696",
+            "title": "实习总结",
+            "entityName": "Vue",
+            "entityType": "tech"
+          },
+          {
+            "docId": "7506896171932061696",
+            "title": "实习总结",
+            "entityName": "vue-ueditor-wrap",
+            "entityType": "tech"
+          }
+        ]
+      },
+      "kgNodes": {
+        "total": 4,
+        "items": [
+          {
+            "label": "entity",
+            "name": "Vue",
+            "type": "tech",
+            "description": null,
+            "mentionCount": 6,
+            "relatedCount": 6
+          },
+          {
+            "label": "entity",
+            "name": "Vue3",
+            "type": "tech",
+            "description": null,
+            "mentionCount": 5,
+            "relatedCount": 10
+          },
+          {
+            "label": "entity",
+            "name": "vue-ueditor-wrap",
+            "type": "tech",
+            "description": null,
+            "mentionCount": 2,
+            "relatedCount": 4
+          },
+          {
+            "label": "entity",
+            "name": "Vue Router",
+            "type": "tech",
+            "description": null,
+            "mentionCount": 1,
+            "relatedCount": 1
+          }
+        ]
+      },
+      "kgEdges": {
+        "total": 6,
+        "items": [
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Vue",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Element Plus",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "vue-ueditor-wrap",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Vue",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Vue",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "混入",
+            "targetType": "term"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Vue",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "响应式原理",
+            "targetType": "term"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Vue",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "自定义指令",
+            "targetType": "term"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Vue",
+            "sourceType": "tech",
+            "relation": "基于",
+            "targetName": "单向数据流原则",
+            "targetType": "term"
+          }
+        ]
+      }
+    },
+    {
+      "query": "Element Plus",
+      "expect": "hit",
+      "desc": "技术类实体：组件库关系",
+      "rag": {
+        "items": [
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 4,
+            "content": "在页面布局与组件运用方面，我使用 Vue 及 Element Plus 构建了项目的整体布局。首先，我设计并实现了侧边栏导航，通过 Element Plus 的菜单组件（El-menu）和图标组件，创建了一个可折叠、可展开的侧边栏，使用户能够方便地在不同功能模块之间切换。同时，我使用头部导航组件（El-header）展示项目的 logo、用户信息和快捷操作按钮，增强了页面的统一性和美观性。在页面主体部分，我根据不同页面的需求，运用 Element Plus 的布局组件（如 El-row、El-col）进行灵活布局，合理设置 CSS 样式，使页面能够自适应不同屏幕尺寸，无论是电脑端的大屏幕还是移动设备的小屏幕，都能为用户提供更舒适的视觉体验。此外，我也运用了多种组件，如表单组件（El-form、Input、Select 等）、表格组件（Vxe-table）等，实现了数据的输入、展示与交互功能。例如，在用户注册页面，我使用了表单组件创建了包含用户名、密码、邮箱等输入项的表单，并设置了相应的验证规则，确保用户输入的数据准确无误；在数据展示页面，我利用 Vxe-table",
+            "score": 0.03278688524590164,
+            "rank": 1
+          },
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 0,
+            "content": "\\# 实习总结\n\n\\## 引言\n\n时光荏苒，我的实习生活已接近尾声。这次实习是我从校园走向社会的重要过渡，让我对软件开发行业有了直观且深入的认识。在实习期间，我积极投身于项目开发，将所学理论知识与实践相结合，在技术能力、问题解决能力以及团队协作能力等方面都取得了显著提升。本文将对我的实习经历进行全面、细致的总结，包括在实习期间所学的知识、参与的项目、遇到的问题及解决方案，以及对未来工作的展望，以此记录下这段宝贵的成长历程，也为未来的职业发展提供参考。\n\n\\## 指导老师：曹夏琳、余萍萍\n\n\\## 技术学习\n\n在实习期间，我深入学习了多种技术，为项目开发奠定了坚实基础。\n\n在前端框架方面，我重点掌握了 Vue 及其组件库 Element Plus。Vue 的响应式数据绑定和组件化开发模式极大地提高了开发效率，让我能够更专注于业务逻辑的实现。Element Plus 丰富的组件库，如按钮、表单、布局组件等，为我提供了便捷的界面构建工具。通过实际项目练习，我熟练运用它们构建了多个页面的用户界面，如登录页面、数据展示页面等，使页面既美观又具有良好的交互性。",
+            "score": 0.03225806451612903,
+            "rank": 2
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 6,
+            "content": "## 软星 ElpisCore 全栈一体化开发框架 核心开发者（前端 & BFF）\n\n项目描述：面向 SaaS 业务的全栈一体化开发框架，平衡通用性与定制化需求，已在多个 BFF 项目中落地使用。\n\n技术栈：Vue3、TypeScript、Element-Plus、Webpack5、Node.js / Koa、Docker、JSON Schema\n\n架构设计：采用领域模型（DDD）驱动设计，沉淀 80% 通用业务能力，支持 20% 定制化扩展，提升项目交付效率\n\n前端工程化：基于 Webpack5 搭建工程化体系，自研热更新服务替代 webpack-dev-server；支持多环境差异化构建与多线程打包\n\n低代码能力：基于 JSON Schema 设计 schema-form / schema-table / schema-search-bar 动态组件体系，配置驱动渲染；提供插件化扩展机制，支持自定义控件注册与重载",
+            "score": 0.03149801587301587,
+            "rank": 3
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 8,
+            "content": "## 软星 CRM 客户管理中台 核心开发（前端）\n\n2024.12 – 2026.04\n\n项目描述：SaaS 化客户管理中台，打通 WMS（仓储）、ERP（进销存）、CRM（客户）三端数据链路，支撑 200+ 企业客户的定制化需求。\n\n技术栈：Vue3、TypeScript、Element-Plus、VxeTable、Pinia\n\n大数据表格：深度封装 VxeTable 增强组件，实现虚拟滚动渲染，10 万+ 数据量下滚动流畅；开发通用表格配置器，支持动态列配置、复杂公式计算、Excel 样式导出，业务复用率达 90%\n\n单点登录：采用双 Token 机制（Access Token + Refresh Token）实现跨系统 SSO，设计 JWT 令牌自动续期机制，用户登录耗时降低 65%\n\n性能优化：路由懒加载 + 组件动态导入 + HTTP/2，首屏加载时间由 4.2s 优化至 1.1s；Tree Shaking + Gzip 压缩 +Nginx 缓存策略，构建产物体积减少 68%",
+            "score": 0.031009615384615385,
+            "rank": 4
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 1,
+            "content": "## 专业技能\n\n前端核心：Vue3 + TypeScript、Composition API、Pinia、Vue Router；Element-Plus、VxeTable；UniApp 小程序与跨端开发\n\n工程化构建：Webpack5 / Vite；自研热更新服务替代 webpack-dev-server；多环境差异化构建、多线程打包、TreeShaking、代码分割\n\n性能优化：路由懒加载、组件动态导入、HTTP/2、虚拟滚动、Gzip 压缩、Nginx 静态资源缓存\n\n服务端 / BFF：Node.js + Koa；Loader 模块自动加载、中间件体系、日志分级落盘、全局错误捕获、API 参数校验、请求签名验证；Docker、CI/CD 自动化流水线\n\nAI 应用开发：LLM 多模型接入（DeepSeek / OpenAI）、SSE 流式输出、Tool Calling 工具体系、MCP 协议、Prompt 规范与参数校验、多模态输入\n\n计算机基础：HTTP/HTTPS、TCP/IP 网络协议；数据结构与算法、常见设计模式",
+            "score": 0.030798389007344232,
+            "rank": 5
+          }
+        ],
+        "took_ms": 272,
+        "mode": "hybrid",
+        "stages": {
+          "embed_ms": 148,
+          "knn_ms": 55,
+          "bm25_ms": 6,
+          "fuse_ms": 0,
+          "rerank_ms": 69
+        }
+      },
+      "kg": {
+        "q": "Element Plus",
+        "docs": {
+          "total": 2,
+          "page": 1,
+          "pageSize": 5,
+          "items": [
+            {
+              "doc_id": "7504813748293472256",
+              "title": "吴金远_前端开发_简历_2026",
+              "summary": "吴金远\n\n前端开发工程师 · AI 应用 / Agent 方向\n\n求职意向：前端开发工程师（AI 应用 / Agent 方向）  工作经验：2 年  期望城市：杭州 / 上海 / 深圳\n\n 专业技能\n\n前端核心：Vue3 + TypeScript、Composition API、Pinia、Vue Router；ElementPlus、VxeTable；UniApp 小程序与跨端开发\n\n工程化构建",
+              "word_count": 2722,
+              "publish_time": "2026-09-15T03:21:42.615Z",
+              "score": 2.9991217,
+              "highlight": {
+                "content": [
+                  "前端开发工程师（AI 应用 / Agent 方向） | 工作经验：2 年 | 期望城市：杭州 / 上海 / 深圳\n\n## 专业技能\n\n前端核心：Vue3 + TypeScript、Composition API、Pinia、Vue Router；<em>Element</em>-<em>Plus</em>",
+                  "技术栈：Vue3、TypeScript、<em>Element</em>-<em>Plus</em>、Webpack5、Node.js / Koa、Docker、JSON Schema\n\n架构设计：采用领域模型（DDD）驱动设计，沉淀 80% 通用业务能力，支持 20% 定制化扩展",
+                  "技术栈：Vue3、TypeScript、<em>Element</em>-<em>Plus</em>、VxeTable、Pinia\n\n大数据表格：深度封装 VxeTable 增强组件，实现虚拟滚动渲染，10 万+ 数据量下滚动流畅；开发通用表格配置器，支持动态列配置、复杂公式计算"
+                ]
+              }
+            },
+            {
+              "doc_id": "7506896171932061696",
+              "title": "实习总结",
+              "summary": "\\ 实习总结\n\n\\ 引言\n\n时光荏苒，我的实习生活已接近尾声。这次实习是我从校园走向社会的重要过渡，让我对软件开发行业有了直观且深入的认识。在实习期间，我积极投身于项目开发，将所学理论知识与实践相结合，在技术能力、问题解决能力以及团队协作能力等方面都取得了显著提升。本文将对我的实习经历进行全面、细致的总结，包括在实习期间所学的知识、参与的项目、遇到的问题及解决方案，以及对未来工作的展望，以此记录下",
+              "word_count": 5823,
+              "publish_time": "2026-09-19T02:05:57.661Z",
+              "score": 2.9334354,
+              "highlight": {
+                "content": [
+                  "在前端框架方面，我重点掌握了 Vue 及其组件库 <em>Element</em> <em>Plus</em>。Vue 的响应式数据绑定和组件化开发模式极大地提高了开发效率，让我能够更专注于业务逻辑的实现。",
+                  "在页面布局与组件运用方面，我使用 Vue 及 <em>Element</em> <em>Plus</em> 构建了项目的整体布局。",
+                  "在使用 <em>Element</em> <em>Plus</em> 的 el-form 包含 Vxe-table 的场景下，当用户连续添加附件时，表格的长度不断增加，最终导致页面布局混乱、性能下降等问题。"
+                ]
+              }
+            }
+          ]
+        },
+        "entities": [
+          {
+            "name": "Element Plus",
+            "type": "tech",
+            "description": null
+          }
+        ],
+        "edges": [
+          {
+            "sourceName": "Vue",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Element Plus",
+            "targetType": "tech"
+          },
+          {
+            "sourceName": "el-form",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Element Plus",
+            "targetType": "tech"
+          },
+          {
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "El-col",
+            "targetType": "tech"
+          },
+          {
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "El-form",
+            "targetType": "tech"
+          },
+          {
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "El-row",
+            "targetType": "tech"
+          }
+        ],
+        "docEdges": [
+          {
+            "docId": "7506896171932061696",
+            "title": "实习总结",
+            "entityName": "Element Plus",
+            "entityType": "tech"
+          }
+        ]
+      },
+      "kgNodes": {
+        "total": 1,
+        "items": [
+          {
+            "label": "entity",
+            "name": "Element Plus",
+            "type": "tech",
+            "description": null,
+            "mentionCount": 4,
+            "relatedCount": 9
+          }
+        ]
+      },
+      "kgEdges": {
+        "total": 9,
+        "items": [
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Vue",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Element Plus",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "el-form",
+            "sourceType": "tech",
+            "relation": "使用",
+            "targetName": "Element Plus",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "El-header",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "El-col",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "El-row",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "El-form",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "El-menu",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "Input",
+            "targetType": "tech"
+          },
+          {
+            "rel": "RELATED_TO",
+            "sourceName": "Element Plus",
+            "sourceType": "tech",
+            "relation": "包含",
+            "targetName": "Select",
+            "targetType": "tech"
+          }
+        ]
+      }
+    },
+    {
+      "query": "王工",
+      "expect": "miss",
+      "desc": "制度类实体：「王工—负责→技术评估」这条关系**没有**被抽出",
+      "rag": {
+        "items": [
+          {
+            "doc_id": "7512704096369905664",
+            "doc_title": "项目立项与审批流程",
+            "chunk_index": 0,
+            "content": "# 项目立项与审批流程\n\n## 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n## 二、技术评估\n技术评估环节由技术负责人王工负责，输出技术可行性与工作量评估结论。\n\n## 三、预算审批\n- 预算不超过 50 万元的立项，由部门负责人审批。\n- 预算超过 50 万元的立项，需 CTO 审批。\n\n## 四、立项后\n立项通过后，由 PMO 统一分配项目编号，并同步至项目管理台账。\n项目结项时需提交结项报告，由 PMO 归档。",
+            "score": 0.031544957774465976,
+            "rank": 1
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 10,
+            "content": "## 个人优势\n\n全栈落地能力：能独立完成前端架构与 BFF 层设计，具备从 0 到 1 搭建企业级开发框架并推动其在多项目复用的经验\n\n工程化深度：熟悉 Webpack 构建机制，具备自研热更新服务、脚手架等构建侧工具的实践经验，对性能优化有系统化方法论\n\nAI 应用实践：具备 LLM 接入、流式交互、Tool Calling 与 MCP 的完整落地经验，持续跟进 Agent 方向的技术演进",
+            "score": 0.01639344262295082,
+            "rank": 2
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 0,
+            "content": "## 吴金远\n\n前端开发工程师 · AI 应用 / Agent 方向\n\n求职意向：前端开发工程师（AI 应用 / Agent 方向） | 工作经验：2 年 | 期望城市：杭州 / 上海 / 深圳",
+            "score": 0.016129032258064516,
+            "rank": 3
+          },
+          {
+            "doc_id": "7512704032700370944",
+            "doc_title": "考勤与加班餐补制度",
+            "chunk_index": 0,
+            "content": "# 考勤与加班餐补制度\n\n## 一、适用范围\n本制度适用于公司全体正式员工。\n\n## 二、加班申请流程\n加班需提前在 OA 系统提交加班申请，经直属主管审批通过后方可计入加班时长。\n未提交申请或未获审批的延时工作不计入加班。\n\n## 三、加班餐补\n- 工作日加班至 20:00 之后，可申请加班餐补，标准为 30 元/次。\n- 餐补随当月工资一并发放，不在当月重复申报。\n- 每位员工每月加班餐补上限为 600 元，超出部分不予发放。\n- 周末加班餐补按实际发生次数核算，同样计入每月上限。\n\n## 四、加班工资\n- 工作日加班按 1.5 倍工资计算。\n- 休息日加班优先安排调休，无法调休的按 2 倍工资计算。\n- 法定节假日加班按 3 倍工资计算，不安排调休。",
+            "score": 0.015873015873015872,
+            "rank": 4
+          },
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 13,
+            "content": "在项目部署优化方面，我学习了服务器配置相关知识，如 Nginx 的配置。我了解了 Nginx 的反向代理、负载均衡、静态资源缓存等功能，通过合理设置 Nginx 参数，如优化反向代理的配置，提高项目的访问速度；设置缓存策略，减少重复请求，降低服务器负载，从而提高项目的访问速度与稳定性。同时，我也了解了 CI/CD 自动化部署流程，通过配置 Git actions，实现了项目的自动化打包与部署。在 Git 仓库中设置自动触发机制，当代码提交或合并到指定分支时，Git actions 会自动执行预设的打包脚本和部署脚本，将项目打包成果自动部署到服务器上。这种方式不仅提高了开发效率，减少了人为错误，还确保了项目的快速迭代和更新，使团队能够更及时地将新功能和修复推向生产环境。\n\n\\## 总结与展望\n\n通过这次实习，我在技术能力、问题解决能力以及团队协作能力等方面都取得了显著提升。",
+            "score": 0.015625,
+            "rank": 5
+          }
+        ],
+        "took_ms": 306,
+        "mode": "hybrid",
+        "stages": {
+          "embed_ms": 151,
+          "knn_ms": 58,
+          "bm25_ms": 4,
+          "fuse_ms": 0,
+          "rerank_ms": 97
+        }
+      },
+      "kg": {
+        "q": "王工",
+        "docs": {
+          "total": 1,
+          "page": 1,
+          "pageSize": 5,
+          "items": [
+            {
+              "doc_id": "7512704096369905664",
+              "title": "项目立项与审批流程",
+              "summary": "项目立项与审批流程\n\n 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n 二、技术评估\n技术评估环节由技术负责人王工负责，输出技术可行性与工作量评估结论。\n\n 三、预算审批\n 预算不超过 50 万元的立项，由部门负责人审批。\n 预算超过 50 万元的立项，需 CTO 审批。\n\n 四、立项后\n立项通过后，由 PMO 统一分配项目编号，并同步至项目管理台账。\n项目",
+              "word_count": 201,
+              "publish_time": "2026-10-05T02:43:56.667Z",
+              "score": 4.7823024,
+              "highlight": {
+                "summary": [
+                  "项目立项与审批流程\n\n 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n 二、技术评估\n技术评估环节由技术负责人<em>王</em><em>工</em>负责，输出技术可行性与工作量评估结论。\n\n 三、预算审批\n 预算不超过 50 万元的立项，由部门负责人审批。\n 预算超过 50 万元的立项，需 CTO 审批。\n\n 四、立项后\n立项通过后，由 PMO 统一分配项目编号，并同步至项目管理台账。\n项目"
+                ],
+                "content": [
+                  "## 二、技术评估\n技术评估环节由技术负责人<em>王</em><em>工</em>负责，输出技术可行性与工作量评估结论。\n\n## 三、预算审批\n- 预算不超过 50 万元的立项，由部门负责人审批。\n- 预算超过 50 万元的立项，需 CTO 审批。"
+                ]
+              }
+            }
+          ]
+        },
+        "entities": [
+          {
+            "name": "王工",
+            "type": "person",
+            "description": null
+          }
+        ],
+        "edges": [],
+        "docEdges": [
+          {
+            "docId": "7512704096369905664",
+            "title": "项目立项与审批流程",
+            "entityName": "王工",
+            "entityType": "person"
+          }
+        ]
+      },
+      "kgNodes": {
+        "total": 1,
+        "items": [
+          {
+            "label": "entity",
+            "name": "王工",
+            "type": "person",
+            "description": null,
+            "mentionCount": 1,
+            "relatedCount": 0
+          }
+        ]
+      },
+      "kgEdges": {
+        "total": 0,
+        "items": []
+      }
+    },
+    {
+      "query": "技术评估",
+      "expect": "miss",
+      "desc": "制度类环节：连实体都没抽出来",
+      "rag": {
+        "items": [
+          {
+            "doc_id": "7512704096369905664",
+            "doc_title": "项目立项与审批流程",
+            "chunk_index": 0,
+            "content": "# 项目立项与审批流程\n\n## 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n## 二、技术评估\n技术评估环节由技术负责人王工负责，输出技术可行性与工作量评估结论。\n\n## 三、预算审批\n- 预算不超过 50 万元的立项，由部门负责人审批。\n- 预算超过 50 万元的立项，需 CTO 审批。\n\n## 四、立项后\n立项通过后，由 PMO 统一分配项目编号，并同步至项目管理台账。\n项目结项时需提交结项报告，由 PMO 归档。",
+            "score": 0.03278688524590164,
+            "rank": 1
+          },
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 14,
+            "content": "通过这次实习，我在技术能力、问题解决能力以及团队协作能力等方面都取得了显著提升。\n\n在技术层面，我不仅掌握了多种前端技术框架与工具的使用方法，如 Vue、Element Plus、Vxe-table、Echarts 等，还深入理解了项目开发的完整流程，从需求分析、页面设计、编码实现到测试部署，每个环节都积累了丰富的实践经验，能够独立承担开发任务。我学会了如何根据项目需求选择合适的技术方案，并在实际开发中灵活运用这些技术，解决各种技术难题，确保项目的顺利进行。\n\n在问题解决方面，面对项目中出现的各种技术难题，如组件显示隐藏问题、表格数据处理异常问题、大数据处理性能问题等，我学会了如何冷静分析问题，通过查阅官方文档、搜索技术社区解决方案、请教团队中的资深开发者等方式，找到针对性的解决方案。这一过程不仅提升了我应对复杂问题的信心与能力，还培养了我严谨的逻辑思维和耐心排查问题的品质。在解决这些问题的过程中，我也积累了许多宝贵的经验，为今后遇到类似问题提供了参考。",
+            "score": 0.03200204813108039,
+            "rank": 2
+          },
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 16,
+            "content": "在未来的工作中，我将继续努力，不断提升自己的技术水平。一方面，我会深入学习现有技术，如 Vue 框架的更高级特性（如自定义指令、混入、响应式原理的深入剖析等）、Echarts 的高级图表定制和优化技巧（如地理地图的精细化配置、3D 图表的应用等），掌握其更高级的用法与原理，为项目的复杂功能实现提供更强大的技术支持。另一方面，我也会关注前端领域的新兴技术，如 WebAssembly 在前端性能优化中的应用、Server - Side Rendering（SSR）技术对用户体验提升的作用、人工智能在前端开发中的融合等，不断拓宽自己的技术视野，积极探索新技术在实际项目中的应用场景，为团队和公司带来创新的技术解决方案。\n\n同时，在项目管理和团队协作方面，我也希望不断成长。我将学习如何更好地进行需求分析和项目规划，提前预估项目中的风险和技术难点，制定合理的开发计划和时间表，确保项目的按时交付和质量保证。我也会不断提升自己的沟通协调能力，更好地与产品经理、后端开发人员、测试人员等不同角色进行协作，打破技术壁垒，促进团队之间的高效沟通和协作氛围的形成，共同打造高质量的软件产品。",
+            "score": 0.03200204813108039,
+            "rank": 3
+          },
+          {
+            "doc_id": "7512704050194812928",
+            "doc_title": "研发中心新员工入职指南",
+            "chunk_index": 0,
+            "content": "# 研发中心新员工入职指南\n\n## 第一周清单\n1. **账号开通**：向 IT 服务台提交账号申请，IT 在 1 个工作日内完成开通（邮箱、OA、GitLab、Jenkins）。\n2. **环境搭建**：安装内网 VPN，克隆部门主仓库，本地跑通构建与单元测试。\n3. **规范学习**：阅读《研发代码规范》，代码合并必须经双人评审后方可合入主干。\n4. **导师对接**：入职当天由部门负责人指定一名导师。\n\n## 导师制度\n- 每名新员工都会指定一名导师，负责前 3 个月的日常答疑与工作节奏对齐。\n- 导师期共 3 个月，期内每两周进行一次一对一对齐。\n- 导师期为 3 个月的试用期考核提供主要输入，考核通过后导师关系自动结束。\n\n## 试用期\n试用期为 6 个月，入职满 3 个月时进行中期评估。",
+            "score": 0.031009615384615385,
+            "rank": 4
+          },
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 3,
+            "content": "在项目优化方面，我学习了如何按需引用库。以 Echarts、Lodash 等常用库为例，我了解到传统的完整引入方式会增加项目包体积，影响加载速度。因此，我学会了通过具体的模块引入或使用工具进行按需加载，仅引入项目中实际需要用到的部分功能模块，从而有效减小了项目包体积，提升了性能。同时，我也了解了 Gzip、Brotli 等压缩技术在项目中的应用。通过在服务器端配置开启这些压缩算法，对传输的文件进行压缩，在不损失内容完整性的前提下，减少了文件大小，进一步优化了项目的加载速度，提高了用户体验。\n\n\\## 项目实践\n\n参与实习项目，让我将所学技术应用于实际开发，积累了宝贵的实践经验。",
+            "score": 0.02964426877470356,
+            "rank": 5
+          }
+        ],
+        "took_ms": 383,
+        "mode": "hybrid",
+        "stages": {
+          "embed_ms": 225,
+          "knn_ms": 57,
+          "bm25_ms": 9,
+          "fuse_ms": 0,
+          "rerank_ms": 101
+        }
+      },
+      "kg": {
+        "q": "技术评估",
+        "docs": {
+          "total": 4,
+          "page": 1,
+          "pageSize": 5,
+          "items": [
+            {
+              "doc_id": "7512704096369905664",
+              "title": "项目立项与审批流程",
+              "summary": "项目立项与审批流程\n\n 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n 二、技术评估\n技术评估环节由技术负责人王工负责，输出技术可行性与工作量评估结论。\n\n 三、预算审批\n 预算不超过 50 万元的立项，由部门负责人审批。\n 预算超过 50 万元的立项，需 CTO 审批。\n\n 四、立项后\n立项通过后，由 PMO 统一分配项目编号，并同步至项目管理台账。\n项目",
+              "word_count": 201,
+              "publish_time": "2026-10-05T02:43:56.667Z",
+              "score": 3.3694196,
+              "highlight": {
+                "summary": [
+                  "项目立项与审批流程\n\n 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n 二、<em>技术</em><em>评估</em>\n<em>技术</em><em>评估</em>环节由<em>技术</em>负责人王工负责，输出<em>技术</em>可行性与工作量<em>评估</em>结论。\n\n 三、预算审批\n 预算不超过 50 万元的立项，由部门负责人审批。\n 预算超过 50 万元的立项，需 CTO 审批。\n\n 四、立项后\n立项通过后，由 PMO 统一分配项目编号，并同步至项目管理台账。\n项目"
+                ],
+                "content": [
+                  "## 二、<em>技术</em><em>评估</em>\n<em>技术</em><em>评估</em>环节由<em>技术</em>负责人王工负责，输出<em>技术</em>可行性与工作量<em>评估</em>结论。\n\n## 三、预算审批\n- 预算不超过 50 万元的立项，由部门负责人审批。\n- 预算超过 50 万元的立项，需 CTO 审批。"
+                ]
+              }
+            },
+            {
+              "doc_id": "7512704050194812928",
+              "title": "研发中心新员工入职指南",
+              "summary": "研发中心新员工入职指南\n\n 第一周清单\n1. 账号开通：向 IT 服务台提交账号申请，IT 在 1 个工作日内完成开通（邮箱、OA、GitLab、Jenkins）。\n2. 环境搭建：安装内网 VPN，克隆部门主仓库，本地跑通构建与单元测试。\n3. 规范学习：阅读《研发代码规范》，代码合并必须经双人评审后方可合入主干。\n4. 导师对接：入职当天由部门负责人指定一名导师。\n\n 导师制度\n 每名新员工都",
+              "word_count": 313,
+              "publish_time": "2026-10-05T02:43:45.242Z",
+              "score": 1.5347149,
+              "highlight": {
+                "content": [
+                  "## 试用期\n试用期为 6 个月，入职满 3 个月时进行中期<em>评估</em>。"
+                ]
+              }
+            },
+            {
+              "doc_id": "7506896171932061696",
+              "title": "实习总结",
+              "summary": "\\ 实习总结\n\n\\ 引言\n\n时光荏苒，我的实习生活已接近尾声。这次实习是我从校园走向社会的重要过渡，让我对软件开发行业有了直观且深入的认识。在实习期间，我积极投身于项目开发，将所学理论知识与实践相结合，在技术能力、问题解决能力以及团队协作能力等方面都取得了显著提升。本文将对我的实习经历进行全面、细致的总结，包括在实习期间所学的知识、参与的项目、遇到的问题及解决方案，以及对未来工作的展望，以此记录下",
+              "word_count": 5823,
+              "publish_time": "2026-09-19T02:05:57.661Z",
+              "score": 1.3159778,
+              "highlight": {
+                "summary": [
+                  "\\ 实习总结\n\n\\ 引言\n\n时光荏苒，我的实习生活已接近尾声。这次实习是我从校园走向社会的重要过渡，让我对软件开发行业有了直观且深入的认识。在实习期间，我积极投身于项目开发，将所学理论知识与实践相结合，在<em>技术</em>能力、问题解决能力以及团队协作能力等方面都取得了显著提升。本文将对我的实习经历进行全面、细致的总结，包括在实习期间所学的知识、参与的项目、遇到的问题及解决方案，以及对未来工作的展望，以此记录下"
+                ],
+                "content": [
+                  "我学会了如何根据项目需求选择合适<em>的技</em>术方案，并在实际开发中灵活运用这<em>些技</em>术，解决各<em>种技</em>术难题，确保项目的顺利进行。",
+                  "另一方面，我也会关注前端领域的新<em>兴技</em>术，如 WebAssembly 在前端性能优化中的应用、Server - Side Rendering（SSR<em>）技</em>术对用户体验提升的作用、人工智能在前端开发中的融合等，不断拓宽自己<em>的技</em>术视野，积极探索<em>新技</em>术在实际项目中的应用场景",
+                  "，为团队和公司带来创新<em>的技</em>术解决方案。"
+                ]
+              }
+            },
+            {
+              "doc_id": "7504813748293472256",
+              "title": "吴金远_前端开发_简历_2026",
+              "summary": "吴金远\n\n前端开发工程师 · AI 应用 / Agent 方向\n\n求职意向：前端开发工程师（AI 应用 / Agent 方向）  工作经验：2 年  期望城市：杭州 / 上海 / 深圳\n\n 专业技能\n\n前端核心：Vue3 + TypeScript、Composition API、Pinia、Vue Router；ElementPlus、VxeTable；UniApp 小程序与跨端开发\n\n工程化构建",
+              "word_count": 2722,
+              "publish_time": "2026-09-15T03:21:42.615Z",
+              "score": 1.3031492,
+              "highlight": {
+                "content": [
+                  "<em>技术</em>栈：Vue3、TypeScript、LLM（DeepSeek / OpenAI）、SSE、Tool Calling、MCP\n\n模型接入层：封装 AI Chat SDK，抽象统一的多模型接入层，支持 DeepSeek / OpenAI 切换",
+                  "<em>技术</em>栈：Vue3、TypeScript、Element-Plus、Webpack5、Node.js / Koa、Docker、JSON Schema\n\n架构设计：采用领域模型（DDD）驱动设计，沉淀 80% 通用业务能力，支持 20% 定制化扩展",
+                  "，降低用户重装成本\n\n基于 Pinia 构建全局状态管理体系，结合本地存储实现数据持久化，减少重复请求\n\n## 教育经历\n\n厦门海洋职业<em>技术</em>学院 软件<em>技术</em> · 大专\n\n2022.09 – 2025.06\n\n优秀毕业生；校级奖学金一等奖；福建省厦门市软件应用与开发三等奖"
+                ]
+              }
+            }
+          ]
+        },
+        "entities": [],
+        "edges": [],
+        "docEdges": []
+      },
+      "kgNodes": {
+        "total": 0,
+        "items": []
+      },
+      "kgEdges": {
+        "total": 0,
+        "items": []
+      }
+    },
+    {
+      "query": "PMO",
+      "expect": "miss",
+      "desc": "制度类组织：只有实体、没有关系",
+      "rag": {
+        "items": [
+          {
+            "doc_id": "7512704096369905664",
+            "doc_title": "项目立项与审批流程",
+            "chunk_index": 0,
+            "content": "# 项目立项与审批流程\n\n## 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n## 二、技术评估\n技术评估环节由技术负责人王工负责，输出技术可行性与工作量评估结论。\n\n## 三、预算审批\n- 预算不超过 50 万元的立项，由部门负责人审批。\n- 预算超过 50 万元的立项，需 CTO 审批。\n\n## 四、立项后\n立项通过后，由 PMO 统一分配项目编号，并同步至项目管理台账。\n项目结项时需提交结项报告，由 PMO 归档。",
+            "score": 0.03278688524590164,
+            "rank": 1
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 5,
+            "content": "稳定性治理：构建 Prompt 规范与参数校验机制，约束模型越权调用，避免 AI 误操作系统能力\n\n多模态交互：支持图片等输入形式，扩展 AI 在业务场景中的适用范围",
+            "score": 0.016129032258064516,
+            "rank": 2
+          },
+          {
+            "doc_id": "7504813748293472256",
+            "doc_title": "吴金远_前端开发_简历_2026",
+            "chunk_index": 9,
+            "content": "## 软星云 APP 前端开发\n\n2025.01 – 2026.05\n\n项目描述：为满足企业客户移动办公需求，整合 CRM / WMS / ERP 各系统能力，实现业务数据在移动端的实时管理。\n\n技术栈：Vue3、UniApp、Pinia\n\n借鉴 ElpisCore 领域模型思想拆分移动端业务模块，统一交互逻辑，降低跨端开发成本\n\n实现移动端打印能力，兼容 BLE 通用蓝牙与 ESC 蓝牙协议，适配不同型号打印机；实现 WGT 热更新提示机制，降低用户重装成本\n\n基于 Pinia 构建全局状态管理体系，结合本地存储实现数据持久化，减少重复请求\n\n## 教育经历\n\n厦门海洋职业技术学院 软件技术 · 大专\n\n2022.09 – 2025.06\n\n优秀毕业生；校级奖学金一等奖；福建省厦门市软件应用与开发三等奖\n\n大学英语四级（CET-4）；曾任学生会干部；豆包 MasCode 青训营结营成员",
+            "score": 0.015873015873015872,
+            "rank": 3
+          },
+          {
+            "doc_id": "7506896171932061696",
+            "doc_title": "实习总结",
+            "chunk_index": 12,
+            "content": "\\## 优化实践\n\n为了提升项目的性能与可维护性，我在项目中积极实践优化措施。\n\n在代码优化方面，我遵循单向数据流原则。在 Vue 项目中，数据从父组件向子组件单向流动，子组件通过事件向父组件反馈数据变化，这样的数据流向清晰明确，便于调试和维护。我严格按照这一原则设计组件之间的数据交互，避免了数据的双向绑定混乱和难以追踪的问题。同时，我也对代码进行了模块化设计，将不同功能划分为独立模块，如将表单验证逻辑封装为独立的验证模块、将数据处理函数封装为数据处理模块等。通过这种方式，提高了代码的复用性，使得相同的功能逻辑可以在不同页面或组件中方便地调用；同时也增强了代码的可读性，让其他开发者能够更快速地理解和维护代码，便于项目的长期发展和团队协作。",
+            "score": 0.015625,
+            "rank": 4
+          },
+          {
+            "doc_id": "7512704079089373184",
+            "doc_title": "数据安全与权限管理规范",
+            "chunk_index": 0,
+            "content": "# 数据安全与权限管理规范\n\n## 一、文档密级\n公司文档密级分为三级：\n- **公开**：可对外发布，所有员工可见。\n- **内部**：默认团队内可见，跨团队访问需申请。\n- **机密**：仅项目负责人及以上职级可见，需单独审批。\n\n## 二、权限授予与回收\n- 权限按最小必要原则授予，不得超范围授权。\n- 员工离职当日回收全部系统权限，由 IT 服务台执行。\n- 每季度对全量权限复核一次，核对结果留档。\n\n## 三、数据外发\n机密文档禁止通过任何形式外发；内部文档外发需经负责人审批。",
+            "score": 0.015384615384615385,
+            "rank": 5
+          }
+        ],
+        "took_ms": 257,
+        "mode": "hybrid",
+        "stages": {
+          "embed_ms": 109,
+          "knn_ms": 73,
+          "bm25_ms": 6,
+          "fuse_ms": 0,
+          "rerank_ms": 75
+        }
+      },
+      "kg": {
+        "q": "PMO",
+        "docs": {
+          "total": 1,
+          "page": 1,
+          "pageSize": 5,
+          "items": [
+            {
+              "doc_id": "7512704096369905664",
+              "title": "项目立项与审批流程",
+              "summary": "项目立项与审批流程\n\n 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n 二、技术评估\n技术评估环节由技术负责人王工负责，输出技术可行性与工作量评估结论。\n\n 三、预算审批\n 预算不超过 50 万元的立项，由部门负责人审批。\n 预算超过 50 万元的立项，需 CTO 审批。\n\n 四、立项后\n立项通过后，由 PMO 统一分配项目编号，并同步至项目管理台账。\n项目",
+              "word_count": 201,
+              "publish_time": "2026-10-05T02:43:56.667Z",
+              "score": 2.8039374,
+              "highlight": {
+                "summary": [
+                  "项目立项与审批流程\n\n 一、发起\n立项由需求方发起，需提交《立项申请单》，写明背景、目标、范围与初步预算。\n\n 二、技术评估\n技术评估环节由技术负责人王工负责，输出技术可行性与工作量评估结论。\n\n 三、预算审批\n 预算不超过 50 万元的立项，由部门负责人审批。\n 预算超过 50 万元的立项，需 CTO 审批。\n\n 四、立项后\n立项通过后，由 <em>PMO</em> 统一分配项目编号，并同步至项目管理台账。\n项目"
+                ],
+                "content": [
+                  "## 四、立项后\n立项通过后，由 <em>PMO</em> 统一分配项目编号，并同步至项目管理台账。\n项目结项时需提交结项报告，由 <em>PMO</em> 归档。"
+                ]
+              }
+            }
+          ]
+        },
+        "entities": [
+          {
+            "name": "PMO",
+            "type": "org",
+            "description": null
+          }
+        ],
+        "edges": [],
+        "docEdges": [
+          {
+            "docId": "7512704096369905664",
+            "title": "项目立项与审批流程",
+            "entityName": "PMO",
+            "entityType": "org"
+          }
+        ]
+      },
+      "kgNodes": {
+        "total": 1,
+        "items": [
+          {
+            "label": "entity",
+            "name": "PMO",
+            "type": "org",
+            "description": null,
+            "mentionCount": 1,
+            "relatedCount": 0
+          }
+        ]
+      },
+      "kgEdges": {
+        "total": 0,
+        "items": []
+      }
+    }
+  ]
+}

@@ -73,17 +73,21 @@ async function searchOnce(token, q, rerank) {
 /**
  * 与 run-eval.mjs 的 retrievalMetrics 同算法，但匹配键从 documentId 换成 doc_title
  * （/rag/search 不返回 documentId，标题已是数据集里的 ground truth 口径）。
+ *
+ * ⚠️ 文档级去重：同一文档的多个 chunk 同时进 Top-K 只算一次命中，
+ *    否则 recall 会 >1（同一期望文档被重复计数）。
  */
 function retrievalMetrics(expectedTitles, titles) {
   const expected = new Set(expectedTitles);
   const topK = titles.slice(0, K);
-  const hits = topK.filter((t) => expected.has(t));
+  const hitChunks = topK.filter((t) => expected.has(t));
+  const hitDocCount = new Set(hitChunks).size;
   const firstIdx = topK.findIndex((t) => expected.has(t));
   return {
-    recall_at_k: expected.size > 0 ? hits.length / expected.size : 0,
-    precision_at_k: hits.length / K,
+    recall_at_k: expected.size > 0 ? Math.min(1, hitDocCount / expected.size) : 0,
+    precision_at_k: hitDocCount / K,
     mrr: firstIdx >= 0 ? 1 / (firstIdx + 1) : 0,
-    hit_at_k: hits.length > 0 ? 1 : 0,
+    hit_at_k: hitChunks.length > 0 ? 1 : 0,
     /** 首条命中位置，便于人工看「精排把对的那条提到了第几位」 */
     first_hit_rank: firstIdx >= 0 ? firstIdx + 1 : null,
   };
