@@ -10,35 +10,51 @@
  *   5. 可选：把音轨混流进成片并烧字幕
  *
  * 用法：
- *   node narrate.mjs --check   # 只打印时长预算表，不调用 API
- *   node narrate.mjs --tts     # 合成 + 对齐 + 字幕 + 音轨
- *   node narrate.mjs --mux     # 混流 + 烧字幕（依赖 --tts 的产物）
- *   node narrate.mjs           # 全部执行
+ *   node narrate.mjs [--lite] [--check|--tts|--mux]
+ *     --check   # 只打印时长预算表，不调用 API
+ *     --tts     # 合成 + 对齐 + 字幕 + 音轨
+ *     --mux     # 混流 + 烧字幕（依赖 --tts 的产物）
+ *     （都不给） # 全部执行
+ *     --lite    # 走精简版：讲稿取 narration-lite.mjs，目标成片为 118s 精简版
  */
 
 import { execFile } from 'node:child_process';
 import { mkdirSync, rmSync, writeFileSync, readFileSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { NARRATION, BODY_DUR, CARD_SEC, VOICE, MODEL, INSTRUCTION, planReport } from './narration.mjs';
 
-/* ───────────────────────── 配置 ───────────────────────── */
+/* ───────────────────────── 版本配置 ───────────────────────── */
+
+/**
+ * 完整版与精简版共用这一套「合成 → 对齐 → 字幕 → 混流」逻辑，差别只在讲稿与目标成片。
+ * 精简版的正文时长不是常量，而是 build-lite.mjs 实测后写进 out/lite/segments.json 的值。
+ */
+const LITE = process.argv.includes('--lite');
+const NAR_MOD = LITE ? './narration-lite.mjs' : './narration.mjs';
+const { NARRATION, BODY_DUR, CARD_SEC, VOICE, MODEL, INSTRUCTION, planReport } =
+  await import(NAR_MOD);
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const WS = resolve(HERE, '..', '..', '..');
 const OUT = join(HERE, 'out');
-const NAR = join(OUT, 'narration');
+const NAR = join(OUT, LITE ? 'narration-lite' : 'narration');
 const RAW = join(NAR, 'raw');
 const DOCS = join(WS, 'docs', 'demo');
 const NARDOC = join(DOCS, 'narration');
+/** 产出物文件名后缀，完整版沿用旧名（无后缀）以免覆盖历史交付物 */
+const SUFFIX = LITE ? '-精简版' : '';
 
 const FF = process.env.DEMO_FFMPEG
   ?? 'C:/Users/yuan/AppData/Local/Microsoft/WinGet/Packages/Gyan.FFmpeg_Microsoft.Winget.Source_8wekyb3d8bbwe/ffmpeg-9.0.2-full_build/bin/ffmpeg.exe';
 const FP = FF.replace(/ffmpeg\.exe$/, 'ffprobe.exe');
 
-const SOURCE_MP4 = join(DOCS, '企业知识库-RAG全流程演示-2026-10-09.mp4');
-const FINAL_MP4 = join(DOCS, '企业知识库-RAG全流程演示-配音版-2026-10-10.mp4');
-const TRACK = join(NARDOC, 'narration.m4a');
+const SOURCE_MP4 = join(DOCS, LITE
+  ? '企业知识库-RAG全流程演示-精简版-无声-2026-10-10.mp4'
+  : '企业知识库-RAG全流程演示-2026-10-09.mp4');
+const FINAL_MP4 = join(DOCS, LITE
+  ? '企业知识库-RAG全流程演示-精简版-2026-10-10.mp4'
+  : '企业知识库-RAG全流程演示-配音版-2026-10-10.mp4');
+const TRACK = join(NARDOC, `narration${SUFFIX}.m4a`);
 const ASS = join(NAR, 'narration.ass');
 const CHECK = process.argv.includes('--check');
 const DO_TTS = process.argv.includes('--tts') || (!CHECK && !process.argv.includes('--mux'));
@@ -176,6 +192,8 @@ function printPlan() {
 async function buildTts() {
   for (const d of [NAR, RAW, NARDOC]) mkdirSync(d, { recursive: true });
   const key = loadKey();
+  // 画面原片的真实时长，用于报表里做对照（不能写死，两个版本不一样）
+  const srcDur = await duration(SOURCE_MP4);
 
   // 静音垫片
   const SIL = join(NAR, 'gap.wav');
@@ -319,10 +337,10 @@ async function buildTts() {
 
   // ---- 时间码表 ----
   const lines = [
-    '企业知识库 · RAG 全流程演示（配音版）— 旁白时间码表',
+    `企业知识库 · RAG 全流程演示${SUFFIX || '（配音版）'} — 旁白时间码表`,
     `生成时间：${new Date().toLocaleString('zh-CN')}`,
     `音色：${VOICE}   模型：${MODEL}`,
-    `音轨总长：${trackDur.toFixed(2)}s（无音轨原片 205.60s）`,
+    `音轨总长：${trackDur.toFixed(2)}s（无音轨原片 ${srcDur.toFixed(2)}s）`,
     '',
   ];
   for (const c of chapters) {
@@ -333,18 +351,18 @@ async function buildTts() {
     }
     lines.push('');
   }
-  const tcFile = join(DOCS, '旁白时间码表.txt');
+  const tcFile = join(DOCS, `旁白时间码表${SUFFIX}.txt`);
   writeFileSync(tcFile, lines.join('\n'), 'utf8');
   console.log(`   ✔ ${tcFile}`);
 
   // ---- 讲稿 Markdown ----
   const md = [
-    '# 演示视频旁白讲稿',
+    `# 演示视频旁白讲稿${LITE ? '（精简版）' : ''}`,
     '',
     `- 音色：\`${VOICE}\`　模型：\`${MODEL}\``,
     '- 指令：' + INSTRUCTION,
     `- 语速基准：5.5 字/秒（实测口径）　块间静音：${GAP}s`,
-    `- 全长：${trackDur.toFixed(2)}s，与原片 205.60s 严格等长（画面零改动）`,
+    `- 全长：${trackDur.toFixed(2)}s，与画面原片 ${srcDur.toFixed(2)}s 严格等长（画面零改动）`,
     '',
   ];
   for (const c of NARRATION) {
@@ -360,7 +378,7 @@ async function buildTts() {
     }
     md.push('');
   }
-  const mdFile = join(NARDOC, '讲稿.md');
+  const mdFile = join(NARDOC, `讲稿${SUFFIX}.md`);
   writeFileSync(mdFile, md.join('\n'), 'utf8');
   console.log(`   ✔ ${mdFile}`);
 
@@ -410,8 +428,8 @@ if (CHECK) {
   printPlan();
 } else {
   console.log('='.repeat(60));
-  console.log('演示视频旁白生成');
-  console.log(`音色 ${VOICE} · 模型 ${MODEL}`);
+  console.log(`演示视频旁白生成${LITE ? '（精简版）' : ''}`);
+  console.log(`音色 ${VOICE} · 模型 ${MODEL} · 讲稿 ${NAR_MOD.replace('./', '')}`);
   console.log('='.repeat(60));
   if (DO_TTS) {
     printPlan();

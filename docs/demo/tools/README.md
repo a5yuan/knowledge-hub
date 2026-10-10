@@ -34,6 +34,26 @@ npm run narrate:mux    # 混流 + 烧字幕 -> docs/demo/*配音版*.mp4
 
 分章重录：`node record.mjs --only=ch3,ch4`（支持自定义顺序）。
 
+## 精简版（<= 120s）
+
+不重录、不重跑浏览器，直接从 `out/webm/` 的原片重排：把「等系统响应」的低信息密度区间
+单独加速（叠 `>> Nx 状态` 角标），操作段保持原速，章节卡从 2.4s 压到 1.2s。
+
+```bash
+npm run build:lite          # 切割 + 变速 + 章节卡 -> out/lite/ + docs/demo/*精简版-无声*.mp4
+                            # 同时产出 out/lite/segments.json（各章实测时长）
+npm run narrate:lite:check  # 精简版讲稿预算（读 segments.json 的真实时长）
+npm run narrate:lite:tts
+npm run narrate:lite:mux    # -> docs/demo/*精简版*.mp4
+```
+
+- **必先跑 `build:lite`**：`narrate.mjs --lite` 的正文目标时长取自 `out/lite/segments.json`，
+  这是 ffmpeg 实测值。写死预算值会让逐章误差累计成音画错位。
+- 章节卡只有 1.2s，卡上台词最多留 4~5 个字（还要留 0.35s 尾巴），
+  所以精简版卡上只念「第N章。」，标题交给画面。
+- 加速区间来源：ch2 用 `ffmpeg -vf "select='gt(scene,0.03)',showinfo"` 场景检测实测；
+  ch3~ch6 是渐进式文字渲染，场景检测抓不到，改由录制脚本的 `PACE` 常量反推。
+
 ## 脚本职责
 
 | 脚本 | 作用 |
@@ -41,12 +61,14 @@ npm run narrate:mux    # 混流 + 烧字幕 -> docs/demo/*配音版*.mp4
 | `record.mjs` | 六章 Playwright 录制。每章独立 BrowserContext，单章失败可单独重录 |
 | `chapters.mjs` | 章节元数据（标题 / 字幕条 tag / 视口模式），录制与后期共用，避免两处漂移 |
 | `build-video.mjs` | 渲染章节卡 PNG → 转 2.4s 静帧 → 与正文交替拼接成主片 |
+| `build-lite.mjs` | 精简版画面：按区间 `trim` + `setpts` 变速 + `drawtext` 叠快进角标 → 118s 主片；输出 `out/lite/segments.json` |
 | `build-startup-page.mjs` | 剥 ANSI 转义码、白名单去重、把启动日志渲染成终端风 HTML |
 | `reset-corpus.mjs` | 走产品自身接口清空文档 / ES / Neo4j / 会话 / mem0 |
 | `probe-intents.mjs` | 录制前预检四类意图路由，避免录完才发现意图判错要重录 |
 | `extract-frames.mjs` | 成片按时间点抽 PNG，人工验收 |
-| `narrate.mjs` | TTS 合成 → 逐章 `atempo` 对齐 → ASS 字幕 → 混流（`--check` / `--tts` / `--mux` 可分段执行） |
-| `narration.mjs` | 配音讲稿结构化数据（`card` + `blocks`）。**改台词只动这里** |
+| `narrate.mjs` | TTS 合成 → 逐章 `atempo` 对齐 → ASS 字幕 → 混流（`--check` / `--tts` / `--mux` 可分段执行；`--lite` 切精简版） |
+| `narration.mjs` | 完整版配音讲稿结构化数据（`card` + `blocks`）。**改台词只动这里** |
+| `narration-lite.mjs` | 精简版讲稿；正文时长从 `out/lite/segments.json` 读实测值 |
 
 ## 关键约束
 
@@ -61,3 +83,19 @@ npm run narrate:mux    # 混流 + 烧字幕 -> docs/demo/*配音版*.mp4
 - 配音的**音色基准语速差异很大**（同一段文本 Cherry 6.00s / Kai 5.28s / Ethan 4.72s，差 27%），
   换音色后必须重新跑 `--check`，字数配比会变。
 - `out/` 是中间产物目录，已 gitignore。
+
+## ffmpeg 踩坑记录
+
+本机用的是 `gyan.dev` 的 `ffmpeg-9.0.2-full_build`（Windows）。下面三条都实测复现过：
+
+1. **`drawtext` 的字体不能写字体名**。`font='Microsoft YaHei'` 走 fontconfig，
+   但这套构建**缺默认配置文件**，会直接段错误（`Fontconfig error: Cannot load default config file` + 访问违例）。
+   必须用 `fontfile` 指向字体文件。
+2. **`fontfile` 的盘符冒号要转义，且必须配单引号**。裸写 `fontfile=C:/Windows/Fonts/msyhbd.ttc` 会被
+   filtergraph 解析器把 `C:` 当参数分隔符吃掉，报 `No option name near '/Windows/Fonts/...'`。
+   正确写法是 `fontfile='C\:/Windows/Fonts/msyhbd.ttc'`（单引号包裹 + 冒号前反斜杠）。
+   另一条可行路是 `cwd` 切到字体所在目录用裸文件名，但那要多复制一份字体文件。
+3. **`subtitles` 滤镜同样怕盘符冒号**。`narrate.mjs` 混流时用 `execFile` + `cwd` 切到字幕目录、
+   只传裸文件名 `subtitles=narration.ass` 绕开。
+4. 用 `lavfi` 造测试源验证滤镜时，`-f lavfi -i color=...` 比 `-i testsrc` 更省事；
+   验证变速链路用 `testsrc` 能直观看到 `setpts` 是否生效（时长是否按倍率缩短）。

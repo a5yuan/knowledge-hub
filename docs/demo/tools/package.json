@@ -8,11 +8,15 @@
     "startup-page": "node build-startup-page.mjs",
     "record": "node record.mjs",
     "build:video": "node build-video.mjs",
+    "build:lite": "node build-lite.mjs",
     "probe:intents": "node probe-intents.mjs",
     "frames": "node extract-frames.mjs",
     "narrate:check": "node narrate.mjs --check",
     "narrate:tts": "node narrate.mjs --tts",
-    "narrate:mux": "node narrate.mjs --mux"
+    "narrate:mux": "node narrate.mjs --mux",
+    "narrate:lite:check": "node narrate.mjs --lite --check",
+    "narrate:lite:tts": "node narrate.mjs --lite --tts",
+    "narrate:lite:mux": "node narrate.mjs --lite --mux"
   },
   "dependencies": {
     "playwright": "1.57.0"
