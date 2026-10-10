@@ -16,6 +16,6 @@ export class RagController {
   @Get('search')
   async search(@Query() dto: RagSearchDto, @CurrentUser() user: AuthUser) {
     const scope = await this.teamService.resolveVisibilityScope(user);
-    return this.ragSearch.search(dto.q, dto.top_k, dto.rerank, scope);
+    return this.ragSearch.search(dto.q, dto.top_k, dto.rerank, scope, dto.mode);
   }
 }

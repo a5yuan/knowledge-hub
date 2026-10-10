@@ -1,5 +1,5 @@
 import { Transform, Type } from 'class-transformer';
-import { IsString, IsOptional, IsInt, Min, Max, Length, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min, Max, Length, IsBoolean, IsIn } from 'class-validator';
 
 /** RAG 混合检索请求参数（GET /rag/search?q=，URL 参数均为字符串，需转换） */
 export class RagSearchDto {
@@ -23,4 +23,12 @@ export class RagSearchDto {
   )
   @IsBoolean()
   rerank: boolean = true;
+
+  /**
+   * 检索消融开关（对照实验用，默认 hybrid = 生产行为）：
+   * hybrid=双路+RRF / hybrid_weighted=双路+分数归一化加权求和（对照臂） / bm25=仅关键词路 / knn=仅向量路
+   */
+  @IsOptional()
+  @IsIn(['hybrid', 'hybrid_weighted', 'bm25', 'knn'])
+  mode: 'hybrid' | 'hybrid_weighted' | 'bm25' | 'knn' = 'hybrid';
 }

@@ -20,7 +20,12 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "eval": "node test/eval/run-eval.mjs",
     "eval:seed": "node test/eval/seed-corpus.mjs",
-    "eval:rerank-ab": "node test/eval/rerank-ab.mjs"
+    "eval:rerank-ab": "node test/eval/rerank-ab.mjs",
+    "eval:ablation": "node test/eval/retrieval-ablation.mjs",
+    "eval:kg": "node test/eval/kg-probe.mjs",
+    "eval:scale": "node test/eval/scale-bench.mjs",
+    "eval:stress": "node test/eval/stress-bench.mjs",
+    "eval:agent": "node test/eval/agent-trace.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "3.1131.0",

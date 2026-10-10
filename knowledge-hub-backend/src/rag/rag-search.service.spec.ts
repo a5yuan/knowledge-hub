@@ -1,5 +1,5 @@
 import { RerankService } from './rerank.service';
-import { RagSearchService, rrfFuse } from './rag-search.service';
+import { RagSearchService, rrfFuse, weightedFuse } from './rag-search.service';
 import { ChunkHit } from '../es/vector-index.service';
 import { EmbeddingService } from '../pipeline/embedding.service';
 import { RerankResult } from './rerank.service';
@@ -44,6 +44,40 @@ describe('rrfFuse（RRF 倒数排名融合）', () => {
   it('双路同时命中的 chunk 排在单路命中之前（融合分更高）', () => {
     const fused = rrfFuse([[hit('a', 0), hit('b', 0)], [hit('b', 0)]]);
     expect(fused[0].doc_id).toBe('b');
+  });
+
+  it('已知边界：两路各自 Top-1 不同时必然同分，胜负由列表遍历顺序决定（对照臂存在的理由）', () => {
+    // 路1 Top-1 = a，路2 Top-1 = b，二者互不在对方列表内 → 都是 1/(60+1)
+    const knnFirst = rrfFuse([[hit('a', 0)], [hit('b', 0)]]);
+    expect(knnFirst[0].doc_id).toBe('a');
+    expect(knnFirst[0].rrfScore).toBeCloseTo(1 / 61, 10);
+    expect(knnFirst[1].rrfScore).toBeCloseTo(1 / 61, 10);
+    // 交换两路顺序，平局结果随之翻转 —— 说明 RRF 在平局时不可判
+    const bm25First = rrfFuse([[hit('b', 0)], [hit('a', 0)]]);
+    expect(bm25First[0].doc_id).toBe('b');
+  });
+});
+
+describe('weightedFuse（分数归一化加权求和 · 对照臂）', () => {
+  it('单路内部做 min-max 归一化后按权重求和，量纲不同也能比较', () => {
+    // BM25 分尺度 0~10，cosine 分尺度 0~1：直接相加会被 BM25 量纲吞掉，归一化后不会
+    const fused = weightedFuse([
+      [hit('bm25top', 0, 10), hit('shared', 0, 5)],
+      [hit('knntop', 0, 0.9), hit('shared', 0, 0.5)],
+    ]);
+    // bm25top = 0.5*1 + 0 = 0.5；knntop = 0 + 0.5*1 = 0.5；shared = 0.5*(5-5)/5 + 0.5*(0.5-0.5)/0.4 = 0
+    expect(fused.map((f) => f.doc_id)).toContain('bm25top');
+    expect(fused.map((f) => f.doc_id)).toContain('knntop');
+    const shared = fused.find((f) => f.doc_id === 'shared')!;
+    expect(shared.rrfScore).toBeCloseTo(0, 10);
+  });
+
+  it('平局可判：单路内部名次相同但原始分不同时，分数能区分（RRF 做不到）', () => {
+    const fused = weightedFuse([[hit('a', 0, 9)], [hit('b', 0, 0.2)]]);
+    // 两路都只有一条且都是各自 Top-1 → 归一化后都是 1 → 权重同为 0.5 → 仍平局；
+    // 这正是加权求和的边界：跨路平局要靠权重或原始分可比性，单靠归一化解决不了
+    expect(fused[0].rrfScore).toBeCloseTo(0.5, 10);
+    expect(fused[1].rrfScore).toBeCloseTo(0.5, 10);
   });
 });
 
