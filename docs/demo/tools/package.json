@@ -1,0 +1,20 @@
+{
+  "name": "knowledge-hub-demo-tools",
+  "private": true,
+  "type": "module",
+  "description": "企业知识库 RAG 全流程演示视频的录制、合成与配音工具链",
+  "scripts": {
+    "reset:corpus": "node reset-corpus.mjs",
+    "startup-page": "node build-startup-page.mjs",
+    "record": "node record.mjs",
+    "build:video": "node build-video.mjs",
+    "probe:intents": "node probe-intents.mjs",
+    "frames": "node extract-frames.mjs",
+    "narrate:check": "node narrate.mjs --check",
+    "narrate:tts": "node narrate.mjs --tts",
+    "narrate:mux": "node narrate.mjs --mux"
+  },
+  "dependencies": {
+    "playwright": "1.57.0"
+  }
+}
