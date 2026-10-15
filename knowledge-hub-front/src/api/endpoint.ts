@@ -28,8 +28,10 @@ const REAL_ROOT: Record<string, string> = {
   // 17 号工单：分类与标签字典（复数→单数重写）
   categories: '/category',
   tags: '/tag',
+  // 18 号工单：用户管理（管理端）与部门树
+  users: '/user',
+  departments: '/department',
   // 以下资源后端未实现，真实通道不会命中（endpoint 返回 mock 通道）
-  users: '/users',
   stats: '/stats',
   announcements: '/announcements',
   operations: '/operations',
@@ -55,7 +57,9 @@ const DEFAULT_MODE: Record<ResourceName, 'real' | 'mock'> = {
   // 17 号工单：分类与标签接入真实后端
   categories: 'real',
   tags: 'real',
-  users: 'mock',
+  // 18 号工单：用户与部门接入真实后端
+  users: 'real',
+  departments: 'real',
   stats: 'mock',
   announcements: 'mock',
   operations: 'mock',

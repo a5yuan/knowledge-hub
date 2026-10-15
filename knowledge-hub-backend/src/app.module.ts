@@ -14,6 +14,8 @@ import { AuthModule } from './auth/auth.module';
 import { TeamModule } from './team/team.module';
 import { FolderModule } from './folder/folder.module';
 import { DocMetaModule } from './doc-meta/doc-meta.module';
+import { DepartmentModule } from './department/department.module';
+import { UserModule } from './user/user.module';
 import { RagModule } from './rag/rag.module';
 import { AiModule } from './ai/ai.module';
 import { ObservabilityModule } from './observability/observability.module';
@@ -47,6 +49,9 @@ import { ObservabilityModule } from './observability/observability.module';
     TeamModule,
     FolderModule,
     DocMetaModule,
+    // 18 号工单：用户与部门域
+    DepartmentModule,
+    UserModule,
     MqModule,
     EsModule,
     PipelineModule,

@@ -15,6 +15,7 @@ import SnowflakeId from 'snowflake-id';
 import { KhUser } from './entities/kh-user.entity';
 import { KhRole } from './entities/kh-role.entity';
 import { KhUserRole } from './entities/kh-user-role.entity';
+import { KhDepartment } from '../department/entities/kh-department.entity';
 import { RegisterDto } from './dto/register.dto';
 import { RedisService } from './redis.service';
 import { MailService } from './mail.service';
@@ -47,6 +48,9 @@ export class UserService {
     private readonly roleRepo: Repository<KhRole>,
     @InjectRepository(KhUserRole)
     private readonly userRoleRepo: Repository<KhUserRole>,
+    // 18 号工单：/auth/me 与 login 响应补 department_name
+    @InjectRepository(KhDepartment)
+    private readonly deptRepo: Repository<KhDepartment>,
     private readonly redis: RedisService,
     private readonly mail: MailService,
     config: ConfigService,
@@ -286,8 +290,9 @@ export class UserService {
     );
   }
 
-  /** kh_user 实体 → request.user 形状 */
-  private toAuthUser(user: KhUser, roles: string[]): AuthUser {
+  /** kh_user 实体 → request.user 形状（18 号工单：联 kh_department 补部门字段） */
+  private async toAuthUser(user: KhUser, roles: string[]): Promise<AuthUser> {
+    const departmentId = user.department_id != null ? String(user.department_id) : null;
     return {
       userId: user.id,
       username: user.username,
@@ -295,6 +300,20 @@ export class UserService {
       email: user.email,
       avatar: user.avatar,
       roles,
+      department_id: departmentId,
+      department_name: await this.resolveDepartmentName(departmentId),
     };
+  }
+
+  /**
+   * 联 kh_department 取部门名（18 号工单）。
+   * 无部门 / 部门已软删 → null（不抛错：部门缺失不应阻断登录）。
+   */
+  async resolveDepartmentName(departmentId: string | null): Promise<string | null> {
+    if (!departmentId) return null;
+    const dept = await this.deptRepo.findOne({
+      where: { id: departmentId, deleted: false },
+    });
+    return dept?.dept_name ?? null;
   }
 }

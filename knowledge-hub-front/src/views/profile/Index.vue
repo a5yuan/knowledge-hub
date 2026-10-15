@@ -2,7 +2,6 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { changePassword, updateProfile } from '@/api/auth'
-import { fetchDepartments } from '@/api/departments'
 import { fetchMyStats } from '@/api/stats'
 import { fetchDocuments } from '@/api/documents'
 import { isRealResource } from '@/api/endpoint'
@@ -22,7 +21,13 @@ const realMode = computed(() => isRealResource('documents'))
 
 // ---------- 基本资料 ----------
 const displayName = ref('')
-const departmentName = ref('')
+/**
+ * 18 号工单：部门名直接取 AuthUser.department_name（后端联 kh_department 得出），
+ * 撤销工单 05 的「恒显示 —」降级。不再依赖 fetchDepartments 下拉 —— 少一次列表往返，
+ * 且部门改名后这里显示的是后端当前值，不会因下拉缓存而滞后。
+ * 无部门（department_id 为 null）时后端返回 null，此处回落 '—'。
+ */
+const departmentName = computed(() => userStore.user?.departmentName ?? '—')
 
 const dirty = computed(() => displayName.value.trim() !== (userStore.user?.displayName ?? ''))
 
@@ -81,9 +86,7 @@ async function submitPassword(): Promise<void> {
 onMounted(async () => {
   displayName.value = userStore.user?.displayName ?? ''
   try {
-    const [depts, myStats] = await Promise.all([fetchDepartments(), loadMyStats()])
-    departmentName.value = depts.find((d) => d.id === userStore.user?.departmentId)?.name ?? '—'
-    stats.value = myStats
+    stats.value = await loadMyStats()
   } catch (error) {
     ElMessage.error(error instanceof Error ? error.message : '数据加载失败')
   }

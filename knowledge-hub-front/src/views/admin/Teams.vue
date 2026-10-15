@@ -15,6 +15,7 @@ import {
   type TeamMemberView,
   type TeamView,
 } from '@/api/team'
+import { fetchUsers, type UserView } from '@/api/users'
 import { useUserStore } from '@/stores/user'
 
 /**
@@ -209,16 +210,42 @@ async function loadMembers(teamId: string): Promise<void> {
 const memberVisible = ref(false)
 const memberForm = reactive({ userId: '' })
 
+/**
+ * 用户选择器数据源（18 号工单）：`/user` 接口已接通，替换 15 号工单「手输 user_id」的临时方案。
+ * 只取启用用户（禁用账号加进来也无法登录，属无效数据）；演示规模下一次性拉 100 条。
+ */
+const userOptions = ref<UserView[]>([])
+const userOptionsLoading = ref(false)
+
+/** 已在当前团队里的成员不再出现在下拉中，避免提交后撞「已是成员」错误 */
+const selectableUsers = computed(() =>
+  userOptions.value.filter((u) => !members.value.some((m) => m.userId === u.id)),
+)
+
+async function loadUserOptions(): Promise<void> {
+  userOptionsLoading.value = true
+  try {
+    const result = await fetchUsers({ status: 'active', page: 1, pageSize: 100 })
+    userOptions.value = result.list
+  } catch {
+    // 用户下拉拉取失败不阻塞弹窗，用户可关闭后重试
+    userOptions.value = []
+  } finally {
+    userOptionsLoading.value = false
+  }
+}
+
 function openAddMember(): void {
   memberForm.userId = ''
   memberVisible.value = true
+  void loadUserOptions()
 }
 
 async function submitAddMember(): Promise<void> {
   if (!activeTeam.value) return
   const uid = memberForm.userId.trim()
   if (!uid) {
-    ElMessage.warning('请填写用户 ID')
+    ElMessage.warning('请选择用户')
     return
   }
   try {
@@ -391,10 +418,14 @@ onMounted(() => {
     <!-- 添加成员 -->
     <el-dialog v-model="memberVisible" title="添加成员" width="460px">
       <el-form label-width="80px">
-        <el-form-item label="用户 ID" required>
-          <el-input v-model="memberForm.userId" placeholder="请输入用户 ID（雪花 ID 字符串）" />
+        <el-form-item label="用户" required>
+          <el-select v-model="memberForm.userId" filterable placeholder="搜索并选择用户" :loading="userOptionsLoading"
+            style="width: 100%">
+            <el-option v-for="u in selectableUsers" :key="u.id" :label="`${u.displayName}（${u.username}）`"
+              :value="u.id" />
+          </el-select>
         </el-form-item>
-        <div class="form-hint">提示：用户选择器待「用户与部门」模块接通后提供。</div>
+        <div class="form-hint">数据源：GET /user（真实后端）；若非 Admin 账号无 user:view 权限，下拉会为空。</div>
       </el-form>
       <template #footer>
         <el-button @click="memberVisible = false">取消</el-button>

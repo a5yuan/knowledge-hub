@@ -2,7 +2,8 @@
  * 文档域字段映射（spec §4.2 权威定义）。
  * snake_case 红线（ADR-0005）：后端字段名只允许出现在 src/api/adapters/ 内。
  *
- * 已知有损映射（spec §4.4）：visibility=department 读侧永不产生；列表无 parse_state /
+ * 已知有损映射（spec §4.4）：visibility=department 读侧永不产生（kh_document 无 visibility 列，
+ * 只能由 is_public 反推 company/private —— 见 backend-todo §2.4b）；列表无 parse_state /
  * fileUrl / fileType / fileSize / ownerName（真实列表不可能项）。
  */
 import type { DocStatus, DocumentItem, DocumentListQuery, FileType, ParseStatus } from '@/types/api'
@@ -185,7 +186,9 @@ export function mapReviewRecord(raw: BackendReviewRecord): ReviewRecord {
 
 /**
  * zone → 后端 query 翻译（spec §4.2）：zone 是请求概念（看哪个桶），docStatus 是响应概念，二者不互推。
- * mine → author_id=<me>；public → is_public=true；archive → status=3；department 无对应（工单 05 UI 隐藏）。
+ * mine → author_id=<me>；public → is_public=true；archive → status=3；
+ * department → zone=department（18 号工单：由后端按「作者所属部门 = 当前用户所属部门」解析，
+ * 前端**不得**自行拼 department_id —— 那会让用户越权查看其他部门的文档）。
  * 禁止发送 is_public=false（后端 DTO 历史缺陷）。keyword 翻译为 title 模糊匹配；排序后端固定 created_at DESC。
  */
 export function toBackendListQuery(
@@ -205,6 +208,10 @@ export function toBackendListQuery(
       break
     case 'archive':
       params.status = 3
+      break
+    // 18 号工单：部门分区交由后端解析（依赖当前登录用户的 department_id）
+    case 'department':
+      params.zone = 'department'
       break
     default:
       break

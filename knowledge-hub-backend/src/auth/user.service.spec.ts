@@ -51,15 +51,20 @@ function makeService(requireEmailVerification: boolean) {
         sendActivationMail: jest.fn().mockResolvedValue(undefined),
         sendResetCodeMail: jest.fn().mockResolvedValue(undefined),
     };
+    // 18 号工单：resolveDepartmentName 联 kh_department；缺省无部门（findOne → null）
+    const deptRepo = {
+        findOne: jest.fn().mockResolvedValue(null),
+    };
     const svc = new UserService(
         userRepo as unknown as Repository<never>,
         roleRepo as unknown as Repository<never>,
         userRoleRepo as unknown as Repository<never>,
+        deptRepo as unknown as Repository<never>,
         redis as unknown as RedisService,
         mail as unknown as MailService,
         makeConfig(requireEmailVerification),
     );
-    return { svc, userRepo, roleRepo, userRoleRepo, redis, mail };
+    return { svc, userRepo, roleRepo, userRoleRepo, deptRepo, redis, mail };
 }
 
 describe('UserService 注册分叉（REQUIRE_EMAIL_VERIFICATION）', () => {

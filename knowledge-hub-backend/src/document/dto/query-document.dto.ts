@@ -4,9 +4,20 @@ import {
   IsOptional,
   IsInt,
   IsBoolean,
+  IsIn,
   Min,
   Max,
 } from 'class-validator';
+
+/**
+ * 文档分区（18 号工单）：mine / public / department / archive。
+ *
+ * 注意：**只有 `department` 由后端解析**（依赖当前登录用户的 department_id，见 document.service.findAll）。
+ * 其余三值历史上一直由前端翻译成 author_id / is_public / status（见 src/api/adapters/document.ts
+ * toBackendListQuery），后端接受但忽略，仅为契约完整性与不 400 保留。
+ */
+export const DOCUMENT_ZONES = ['mine', 'public', 'department', 'archive'] as const;
+export type DocumentZone = (typeof DOCUMENT_ZONES)[number];
 
 /**
  * 查询文档列表的过滤与分页参数（GET query，URL 参数均为字符串，需 @Type 转换）
@@ -46,6 +57,11 @@ export class QueryDocumentDto {
   @IsOptional()
   @IsString()
   tags?: string;
+
+  /** 分区（18 号工单）：仅 `department` 生效 —— 按「文档作者所属部门 = 当前用户所属部门」过滤 */
+  @IsOptional()
+  @IsIn(DOCUMENT_ZONES)
+  zone?: DocumentZone;
 
   /** 状态：0=草稿, 1=已发布, 2=已归档 */
   @IsOptional()

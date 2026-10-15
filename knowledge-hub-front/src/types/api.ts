@@ -24,6 +24,22 @@ export interface Department {
   name: string
 }
 
+/**
+ * 部门树节点（18 号工单）。
+ * `parentId: null` 表示根 —— 后端 `parent_id` 的 `'0'` 哨兵必须在此归一，
+ * 理由与 `adapters/folder.ts` 的 mapFolder 一致：哨兵泄漏进视图层会让建树逻辑静默错位。
+ */
+export interface DepartmentNode {
+  id: string
+  name: string
+  /** 后端 dept_code，可空 */
+  code: string | null
+  parentId: string | null
+  sort: number
+  enabled: boolean
+  children: DepartmentNode[]
+}
+
 export interface User {
   id: string
   username: string
@@ -41,6 +57,8 @@ export type PublicUser = Omit<User, 'password'> & {
   /** 后端角色编码列表（如 ['ROLE_ADMIN','ROLE_USER']）；Mock 会话无此字段 */
   roles?: string[]
   avatar?: string | null
+  /** 归属部门名（18 号工单，来自 AuthUser.department_name；Mock 会话无此字段） */
+  departmentName?: string | null
 }
 
 export interface Category {

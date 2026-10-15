@@ -96,6 +96,13 @@ const router = createRouter({
               component: () => import('@/views/admin/Teams.vue'),
               meta: { title: '团队管理' },
             },
+            {
+              // 18 号工单：组织架构（org:manage 的唯一挂载点）
+              path: 'departments',
+              name: 'admin-departments',
+              component: () => import('@/views/admin/Departments.vue'),
+              meta: { title: '组织架构', permission: 'system:dept' },
+            },
           ],
         },
       ],

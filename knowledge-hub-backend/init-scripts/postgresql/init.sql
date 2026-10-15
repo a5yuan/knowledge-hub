@@ -382,3 +382,71 @@ INSERT INTO kh_role_permission (id, role_id, permission_id) VALUES
     (4100000000000000015, 2000000000000000003, 4000000000000000061),
     (4100000000000000016, 2000000000000000003, 4000000000000000062)
 ON CONFLICT DO NOTHING;
+
+
+-- ==================== 用户与部门（18 号工单） ====================
+
+-- 部门表（树形，深度 ≤ 3）。字段风格对齐 kh_team / kh_folder：下划线前缀命名 + parent_id 以 0 表根
+CREATE TABLE IF NOT EXISTS kh_department (
+    id BIGINT PRIMARY KEY,                          -- 部门 ID（雪花）
+    dept_name VARCHAR(50) NOT NULL,                 -- 部门名称
+    dept_code VARCHAR(50),                          -- 部门编码
+    parent_id BIGINT NOT NULL DEFAULT 0,            -- 父部门 ID，0 为根
+    sort INT NOT NULL DEFAULT 0,                    -- 同级排序
+    status SMALLINT NOT NULL DEFAULT 1,             -- 0 禁用 1 启用
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    create_by BIGINT,                               -- 创建人 → kh_user.id
+    update_by BIGINT,                               -- 最后更新人 → kh_user.id
+    deleted BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX IF NOT EXISTS idx_kh_department_parent_id ON kh_department(parent_id);
+-- 未删部门名唯一（软删后允许复用同名，故建部分唯一索引而非列级 UNIQUE）
+CREATE UNIQUE INDEX IF NOT EXISTS uk_kh_department_name ON kh_department(dept_name) WHERE deleted = false;
+
+-- 用户归属部门（可空：不强制所有用户归部门）
+ALTER TABLE kh_user ADD COLUMN IF NOT EXISTS department_id BIGINT;
+CREATE INDEX IF NOT EXISTS idx_kh_user_department_id ON kh_user(department_id);
+
+-- 种子部门（三层结构：技术中心 → 研发部 → 前端组/后端组，用于验证树形与深度约束）
+INSERT INTO kh_department (id, dept_name, dept_code, parent_id, sort) VALUES
+    (5000000000000000001, '技术中心', 'TECH', 0, 1),
+    (5000000000000000002, '研发部',   'RD',   5000000000000000001, 1),
+    (5000000000000000003, '产品部',   'PD',   5000000000000000001, 2),
+    (5000000000000000004, '市场部',   'MKT',  0, 2),
+    (5000000000000000005, '前端组',   'FE',   5000000000000000002, 1),
+    (5000000000000000006, '后端组',   'BE',   5000000000000000002, 2)
+ON CONFLICT (id) DO NOTHING;
+
+-- 存量用户归部门：admin 归「后端组」，使 zone=department 有可验证数据
+UPDATE kh_user SET department_id = 5000000000000000006
+  WHERE username = 'admin' AND department_id IS NULL;
+
+-- 用户与部门管理权限码。
+-- ⚠️ 18 号工单原文预留 4000000000000000061~0064 / 0071，但 0061/0062 已被 17 号工单
+--    （doc:meta:category / doc:meta:tag）占用，故改取 0081 起号段，避开冲突。
+-- system:dept 菜单为新建（原权限树只有 system:user/role/permission/team 四项，无部门菜单）
+INSERT INTO kh_permission (id, parent_id, permission_name, permission_code, permission_type, menu_url, sort) VALUES
+    (4000000000000000081, 4000000000000000005, '组织架构', 'system:dept', 1, '/admin/departments', 5)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kh_permission (id, parent_id, permission_name, permission_code, permission_type, sort) VALUES
+    (4000000000000000082, 4000000000000000021, '查看用户', 'user:view',   2, 1),
+    (4000000000000000083, 4000000000000000021, '创建用户', 'user:create', 2, 2),
+    (4000000000000000084, 4000000000000000021, '编辑用户', 'user:edit',   2, 3),
+    (4000000000000000085, 4000000000000000021, '删除用户', 'user:delete', 2, 4),
+    (4000000000000000086, 4000000000000000081, '组织管理', 'org:manage',  2, 1)
+ON CONFLICT (id) DO NOTHING;
+
+-- ROLE_USER 授权：仅 user:view 与 org:manage（与 team 权限的演示收敛风格一致）
+-- user:create / user:edit / user:delete 不授任何角色 —— 仅 Admin 经 PermissionsGuard 旁路放行
+--
+-- ⚠️ 菜单码 system:user(0021) / system:dept(0081) 刻意不授 ROLE_USER，与 system:team(0024) 同款处理：
+--    ROLE_USER 连顶层「系统管理」菜单 system(0005) 都未授，单授 0081 是死码（父菜单不显示 → 子项无挂载点），
+--    要让非 Admin 看见必须连 0005 一起放开，那是「普通用户可见系统管理分组」的语义变更，本工单不做。
+--    故 user:view / org:manage 只作为「接口级能力码」存在：Admin 经 PermissionsGuard 旁路全通过，
+--    非 Admin 即使被直赋该码也只能调接口、看不到管理页。team:* 自 05 工单起即为此约定。
+INSERT INTO kh_role_permission (id, role_id, permission_id) VALUES
+    (4100000000000000081, 2000000000000000003, 4000000000000000082),
+    (4100000000000000082, 2000000000000000003, 4000000000000000086)
+ON CONFLICT DO NOTHING;

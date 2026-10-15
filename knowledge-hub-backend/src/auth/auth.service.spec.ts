@@ -35,7 +35,7 @@ const makeUser = (overrides: Partial<KhUser> = {}): KhUser =>
 
 describe('AuthService 登录与刷新语义', () => {
     let svc: AuthService;
-    let userService: { findByUsername: jest.Mock; getRoleCodes: jest.Mock; updateLastLogin: jest.Mock; getUserWithRoles: jest.Mock };
+    let userService: { findByUsername: jest.Mock; getRoleCodes: jest.Mock; updateLastLogin: jest.Mock; getUserWithRoles: jest.Mock; resolveDepartmentName: jest.Mock };
     let jwt: JwtService;
 
     beforeEach(() => {
@@ -45,6 +45,8 @@ describe('AuthService 登录与刷新语义', () => {
             getRoleCodes: jest.fn().mockResolvedValue(['ROLE_ADMIN', 'ROLE_REVIEWER']),
             updateLastLogin: jest.fn().mockResolvedValue(undefined),
             getUserWithRoles: jest.fn(),
+            // 18 号工单：login 的 userInfo 补 department_name（无部门 → null）
+            resolveDepartmentName: jest.fn().mockResolvedValue(null),
         };
         jwt = new JwtService({ secret: TEST_SECRET, signOptions: { expiresIn: '2h' } });
         const config = {
@@ -73,6 +75,9 @@ describe('AuthService 登录与刷新语义', () => {
                 email: 'admin@company.com',
                 avatar: null,
                 roles: ['ROLE_ADMIN', 'ROLE_REVIEWER'],
+                // 18 号工单：userInfo 补部门字段（makeUser 无 department_id → 双 null）
+                department_id: null,
+                department_name: null,
             });
             // 双 token payload：sub/type 与流程图一致，且类型互异
             const access = jwt.verify(result.accessToken) as { sub: string; type: string };

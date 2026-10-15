@@ -38,6 +38,7 @@ import { DocIndexService } from '../es/doc-index.service';
 import { isDocVisible, type VisibilityScope } from '../es/visibility-scope';
 import { KgService } from '../kg/kg.service';
 import { TagsService } from '../doc-meta/tags.service';
+import { KhUser } from '../auth/entities/kh-user.entity';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 /** 文档状态机：仅 1=已发布 参与三套索引（kh_chunk / kh_document / Neo4j） */
@@ -70,6 +71,9 @@ export class DocumentService {
         private readonly config: ConfigService,
         // 17 号工单：标签归属的唯一真相源在关联表，写侧与读侧都必须经本服务
         private readonly tagsService: TagsService,
+        // 18 号工单：zone=department 需按「同部门作者」构造 author_id 过滤
+        @InjectRepository(KhUser)
+        private readonly userRepo: Repository<KhUser>,
     ) {
         this.reviewEnabled = this.config.get('REVIEW_ENABLED') === 'true';
     }
@@ -181,7 +185,7 @@ export class DocumentService {
      * 本人任何状态 ∪ 已发布+公开 ∪ 已发布+本团队；审核人另可见待审核）
      * 客户端 filter 与可见性 AND 求交（只能收紧不能放宽）
      */
-    async findAll(query: QueryDocumentDto, scope?: VisibilityScope) {
+    async findAll(query: QueryDocumentDto, scope?: VisibilityScope, user?: AuthUser) {
         const {
             page = 1,
             pageSize = 20,
@@ -194,6 +198,7 @@ export class DocumentService {
             tags,
             status,
             is_public,
+            zone,
         } = query;
         const qb = this.documentRepo
             .createQueryBuilder('d')
@@ -209,6 +214,25 @@ export class DocumentService {
         // ⚠️ 17 号工单遗留：这是对「派生串」的模糊匹配（D 方案下串只是历史兼容值）。
         // 前端已不再发送该参数；保留仅为不破坏既有调用方。后续应改为按关联表 tag_id 过滤。
         if (tags !== undefined) qb.andWhere('d.tags LIKE :tags', { tags: `%${tags}%` });
+        // 18 号工单（决策 10d）：部门分区 = 「文档作者所属部门 = 当前用户所属部门」
+        if (zone === 'department') {
+            const myDeptId = user?.department_id;
+            if (!myDeptId) {
+                throw new BadRequestException('当前用户未归属任何部门，无法查看部门文档');
+            }
+            const peers = await this.userRepo.find({
+                where: { department_id: myDeptId, deleted: false },
+                select: { id: true },
+            });
+            // In([]) 在 TypeORM 中生成 IN (NULL) 恒假条件，这里显式短路，语义更清晰
+            // （与 17 号工单的 N+1/空集处理同一坑）
+            if (peers.length === 0) {
+                return { items: [], total: 0, page, pageSize };
+            }
+            qb.andWhere('d.author_id IN (:...deptAuthorIds)', {
+                deptAuthorIds: peers.map((p) => String(p.id)),
+            });
+        }
         if (scope && !scope.isAdmin) {
             // 语义与 es/visibility-scope.ts 的 buildVisibilityFilter 一一对应
             qb.andWhere(

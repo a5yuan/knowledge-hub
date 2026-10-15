@@ -56,15 +56,17 @@ interface ZoneMeta {
   icon: string
 }
 
+/**
+ * 18 号工单：四个分区在真实模式下**全部可见** —— 撤销工单 05 对「部门文档」的隐藏。
+ * zone=department 由后端按「文档作者所属部门 = 当前用户所属部门」解析（决策 10d），
+ * 前端不拼 department_id，避免越权查看其他部门文档。
+ */
 const ZONES: ZoneMeta[] = [
   { key: 'mine', label: '我的文档', icon: 'Document' },
   { key: 'public', label: '公共文档', icon: 'Files' },
   { key: 'department', label: '部门文档', icon: 'OfficeBuilding' },
   { key: 'archive', label: '文档归档', icon: 'FolderOpened' },
 ]
-
-// 真实模式隐藏部门分区：后端无用户→部门数据，zone=department 无法翻译成 query（spec 工单 05）
-const visibleZones = computed(() => ZONES.filter((z) => z.key !== 'department' || !realMode.value))
 
 const zone = ref<DocZone>('mine')
 const folderId = ref<string>()
@@ -469,7 +471,7 @@ function onPreview(doc: DocumentWithOwner): void {
     <!-- 左侧：四分区 + 文件夹树 -->
     <el-aside class="doc-aside" width="200px">
       <div class="aside-title">文档管理</div>
-      <div v-for="z in visibleZones" :key="z.key" class="zone-item" :class="{ active: zone === z.key }"
+      <div v-for="z in ZONES" :key="z.key" class="zone-item" :class="{ active: zone === z.key }"
         @click="switchZone(z.key)">
         <el-icon>
           <component :is="z.icon" />
@@ -595,7 +597,7 @@ function onPreview(doc: DocumentWithOwner): void {
         </el-table-column>
         <el-table-column label="权限范围" width="120">
           <template #default="{ row }">
-            <!-- 可选链兜底：真实行 visibility 仅 private/company，department 永不产生（工单 03） -->
+            <!-- 可选链兜底：真实行 visibility 由 is_public 反推（仅 private/company）——kh_document 无 visibility 列，见 backend-todo §2.4b -->
             <el-tag :type="VISIBILITY_META[row.visibility as Visibility]?.tag ?? 'info'" size="small" effect="plain">
               {{ VISIBILITY_META[row.visibility as Visibility]?.label ?? '—' }}
             </el-tag>

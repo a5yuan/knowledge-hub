@@ -14,6 +14,10 @@ export interface BackendAuthUser {
   avatar: string | null
   /** 角色编码列表，如 ['ROLE_ADMIN', 'ROLE_USER'] */
   roles: string[]
+  /** 归属部门 ID（18 号工单；无部门为 null） */
+  department_id?: string | null
+  /** 归属部门名（18 号工单；无部门或部门已删为 null） */
+  department_name?: string | null
 }
 
 /** 后端登录 / refresh 统一返回（auth.service.ts TokenPairResult） */
@@ -32,8 +36,9 @@ export function mapAuthUser(u: BackendAuthUser): PublicUser {
     username: u.username,
     displayName: u.realName ?? u.username,
     role: u.roles.includes('ROLE_ADMIN') ? 'admin' : 'member',
-    // 后端无部门字段，不可能提供（spec §4.1 有损映射）
-    departmentId: '',
+    // 18 号工单：/auth/me 与 login 已补部门字段（撤销工单 05 的降级）
+    departmentId: u.department_id ?? '',
+    departmentName: u.department_name ?? null,
     // 派生安全：后端登录时已对禁用账号返回 403
     status: 'active',
     // 后端不提供，仅系统管理表格用（属 Mock 组）

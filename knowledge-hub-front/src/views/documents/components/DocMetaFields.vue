@@ -28,7 +28,18 @@ const VISIBILITY_OPTIONS: { value: Visibility; label: string }[] = [
   { value: 'private', label: '仅本人可见' },
 ]
 
-// 真实模式隐藏「部门可见」：后端无用户→部门映射，写入会被降级为 private（spec 工单 05）
+/**
+ * ⚠️ 「部门可见」在真实模式下**依然隐藏**（18 号工单核实后维持工单 05 的判断）。
+ *
+ * 18 号工单原本认为补上「用户→部门」映射即可恢复本选项，但实测确认真正的阻碍不是部门数据源，
+ * 而是 **kh_document 根本没有 visibility 列**（只有 is_public boolean），且
+ * `es/visibility-scope.ts` 的可见性规则里也没有「已发布 + 本部门可见」这一条。
+ *
+ * 因此若在真实模式放开该选项，用户选「部门可见」后写入会被静默丢弃（见 api/documents.ts 的
+ * `meta.visibility !== 'department'` 守卫），列表回显成「仅本人可见」——**这是误导性 UI，比隐藏更差**。
+ * 恢复它需要新开工单：加 `kh_document.visibility` 列 + PG/ES 两侧补「同部门已发布可见」规则。
+ * 缺口已登记在 backend-todo.md §2.4b。
+ */
 const realMode = computed(() => isRealResource('documents'))
 const visibleVisibilityOptions = computed(() =>
   VISIBILITY_OPTIONS.filter((o) => o.value !== 'department' || !realMode.value),

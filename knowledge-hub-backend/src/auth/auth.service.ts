@@ -92,6 +92,7 @@ export class AuthService {
     user: KhUser,
     roles: string[],
   ): Promise<TokenPairResult> {
+    const departmentId = user.department_id != null ? String(user.department_id) : null;
     const userInfo: AuthUser = {
       userId: user.id,
       username: user.username,
@@ -99,6 +100,9 @@ export class AuthService {
       email: user.email,
       avatar: user.avatar,
       roles,
+      // 18 号工单：login 与 /auth/me 响应形状保持一致（都要带部门）
+      department_id: departmentId,
+      department_name: await this.userService.resolveDepartmentName(departmentId),
     };
     return {
       accessToken: this.jwt.sign({ sub: user.id, username: user.username, type: 'access' }),

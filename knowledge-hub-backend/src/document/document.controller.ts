@@ -67,11 +67,11 @@ export class DocumentController {
     return this.documentService.create(dto, user);
   }
 
-  /** 分页查询文档列表（09 号工单：按当前用户可见性过滤） */
+  /** 分页查询文档列表（09 号工单：按当前用户可见性过滤；18 号工单：支持 zone=department） */
   @Get()
   async findAll(@Query() query: QueryDocumentDto, @CurrentUser() user: AuthUser) {
     const scope = await this.teamService.resolveVisibilityScope(user);
-    return this.documentService.findAll(query, scope);
+    return this.documentService.findAll(query, scope, user);
   }
 
   /** 待审核数量（角标轮询用）。注意：必须注册在 @Get(':id') 之前，否则被 :id 吞掉 */

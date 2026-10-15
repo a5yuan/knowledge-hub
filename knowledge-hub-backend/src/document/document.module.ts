@@ -11,10 +11,11 @@ import { StorageModule } from '../storage/storage.module';
 import { KgModule } from '../kg/kg.module';
 import { TeamModule } from '../team/team.module';
 import { DocMetaModule } from '../doc-meta/doc-meta.module';
+import { KhUser } from '../auth/entities/kh-user.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([KhDocument, KhDocumentReview]),
+    TypeOrmModule.forFeature([KhDocument, KhDocumentReview, KhUser]),
     MongooseModule.forFeature([
       { name: DocumentContent.name, schema: DocumentContentSchema },
     ]),

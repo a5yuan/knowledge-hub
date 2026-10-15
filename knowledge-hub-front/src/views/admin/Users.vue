@@ -193,8 +193,7 @@ onMounted(async () => {
 
 <template>
   <div class="page admin-page">
-    <!-- 后端无用户管理接口，本页数据恒为 Mock（工单 05：显式标注，避免误解为真实数据） -->
-    <h2 class="page-title">系统管理<el-tag size="small" type="info" effect="plain" style="margin-left: 8px">演示数据</el-tag></h2>
+    <h2 class="page-title">系统管理</h2>
 
     <el-card shadow="never">
       <!-- 筛选工具栏 -->

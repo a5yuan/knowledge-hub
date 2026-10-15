@@ -5,7 +5,7 @@ import { useUserStore } from '@/stores/user'
 
 /**
  * 系统管理布局（权限模型控制工单）：左侧子菜单 + 右侧内容区，复刻角色权限页原型图。
- * 子菜单按当前用户权限码过滤（system:user / system:role / system:team）。
+ * 子菜单按当前用户权限码过滤（system:user / system:role / system:team / system:dept）。
  */
 const route = useRoute()
 const userStore = useUserStore()
@@ -21,6 +21,8 @@ const menuItems: AdminMenuItem[] = [
   { path: '/admin/users', title: '用户管理', icon: 'User', permission: 'system:user' },
   { path: '/admin/roles', title: '角色权限', icon: 'Lock', permission: 'system:role' },
   { path: '/admin/teams', title: '团队管理', icon: 'UserFilled', permission: 'system:team' },
+  // 18 号工单：组织架构（部门树维护）
+  { path: '/admin/departments', title: '组织架构', icon: 'OfficeBuilding', permission: 'system:dept' },
 ]
 
 const visibleMenuItems = computed(() =>

@@ -23,6 +23,7 @@ import { KhUserRole } from './entities/kh-user-role.entity';
 import { KhPermission } from './entities/kh-permission.entity';
 import { KhRolePermission } from './entities/kh-role-permission.entity';
 import { KhUserPermission } from './entities/kh-user-permission.entity';
+import { KhDepartment } from '../department/entities/kh-department.entity';
 
 /**
  * 用户鉴权模块：
@@ -40,6 +41,8 @@ import { KhUserPermission } from './entities/kh-user-permission.entity';
       KhPermission,
       KhRolePermission,
       KhUserPermission,
+      // 18 号工单：/auth/me 与 login 响应补 department_name（联 kh_department 取名称）
+      KhDepartment,
     ]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

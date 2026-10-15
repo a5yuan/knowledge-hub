@@ -52,6 +52,10 @@ export class KhUser {
   @Column({ type: 'timestamp', nullable: true })
   last_login_at: Date | null;
 
+  /** 归属部门 → kh_department.id（18 号工单；可空，不强制所有用户归部门） */
+  @Column({ type: 'bigint', nullable: true })
+  department_id: string | null;
+
   /** 创建时间 */
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
