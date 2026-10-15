@@ -58,3 +58,7 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # 评测运行产物：含本机数据库生成的雪花 doc_id，跨环境不可移植，不入库
 test/eval/corpus-manifest.json
 test/eval/eval-report.md
+
+# 本地临时构建目录：沙箱下 nest start 受限时用 `tsc --outDir ./.run-build` 替代，
+# 产物由源码直接生成、跨环境不可移植，不入库
+/.run-build
