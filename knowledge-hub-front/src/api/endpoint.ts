@@ -21,6 +21,8 @@ const REAL_ROOT: Record<string, string> = {
   roles: '/role',
   graphs: '/kg',
   ai: '/ai',
+  // 15 号工单：团队模块（后端 9 路由已就绪，本工单为纯前端接入）
+  teams: '/team',
   // 以下资源后端未实现，真实通道不会命中（endpoint 返回 mock 通道）
   folders: '/folders',
   users: '/users',
@@ -46,6 +48,7 @@ const DEFAULT_MODE: Record<ResourceName, 'real' | 'mock'> = {
   roles: 'real',
   graphs: 'real',
   ai: 'real',
+  teams: 'real',
   folders: 'mock',
   users: 'mock',
   stats: 'mock',
