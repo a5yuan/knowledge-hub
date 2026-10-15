@@ -258,3 +258,29 @@ CREATE TABLE IF NOT EXISTS kh_ai_message (
 );
 CREATE INDEX IF NOT EXISTS idx_kh_ai_message_session_id
     ON kh_ai_message(session_id, created_at);
+
+-- ==================== 目录（16 号工单） ====================
+
+-- 目录表（树形，按 zone 分区）
+-- zone 仅三值：mine / public / department —— archive 是文档状态（status=3）而非分区，不入本表
+CREATE TABLE IF NOT EXISTS kh_folder (
+    id BIGINT PRIMARY KEY,                          -- 目录 ID（雪花）
+    folder_name VARCHAR(100) NOT NULL,              -- 目录名称
+    parent_id BIGINT NOT NULL DEFAULT 0,            -- 父目录 ID，0 为根
+    zone VARCHAR(20) NOT NULL,                      -- 分区：mine / public / department
+    owner_id BIGINT,                                -- mine 分区归属用户 → kh_user.id
+    department_id BIGINT,                           -- department 分区归属部门 → kh_department.id（18 号工单建表）
+    sort INT NOT NULL DEFAULT 0,                    -- 同级排序
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    create_by BIGINT,
+    update_by BIGINT,
+    deleted BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX IF NOT EXISTS idx_kh_folder_parent_id ON kh_folder(parent_id);
+CREATE INDEX IF NOT EXISTS idx_kh_folder_zone ON kh_folder(zone) WHERE deleted = false;
+
+-- 文档归属目录（严格归属：单列外键，可空；NULL = 根目录）
+ALTER TABLE kh_document ADD COLUMN IF NOT EXISTS folder_id BIGINT;
+CREATE INDEX IF NOT EXISTS idx_kh_document_folder_id ON kh_document(folder_id);
+

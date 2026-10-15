@@ -13,6 +13,7 @@ export interface BackendDocument {
   title: string
   summary: string | null
   category_id: string | null
+  folder_id: string | null
   team_id: string | null
   author_id: string | null
   create_by: string | null
@@ -92,7 +93,8 @@ export function mapDocument(raw: BackendDocument): DocumentItem {
     visibility: raw.is_public ? 'company' : 'private',
     // 有损（spec §4.4）：后端无部门维度，读侧永不产生 department
     zone: 'mine',
-    folderId: null,
+    // 16 号工单：后端 folder_id 可空（NULL = 未归属目录/根目录），原样透传
+    folderId: raw.folder_id != null ? String(raw.folder_id) : null,
     ownerId: String(raw.author_id ?? raw.create_by ?? ''),
     // 真实列表无 parse_state：留空（undefined），仅近期上传行经 mergeDetail 合并，避免「永不停止的轮询」
     parseStatus: undefined,
@@ -215,6 +217,8 @@ export function toBackendListQuery(
     default:
       break
   }
+  // 16 号工单：按目录筛选（空值/未选 = 不过滤，即左侧「全部文档」）
+  if (query.folderId) params.folder_id = query.folderId
   const kw = query.keyword?.trim()
   if (kw) params.title = kw
   return params

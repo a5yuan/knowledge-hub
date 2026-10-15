@@ -106,6 +106,8 @@ pnpm build                                   # vue-tsc -b && vite build
 | 前端架构决策 | `knowledge-hub-front/docs/adr/`（0001~0006） |
 | 前端 MVP 契约 | `knowledge-hub-front/.scratch/knowledge-hub-mvp/spec.md`（**唯一事实源**） |
 | RBAC 权限体系 | `knowledge-hub-backend/doc/rbac-权限模块工单.md` |
+| 团队模块接入（前端） | `backend-integration/issues/15-team-frontend-integration.md` |
+| 目录树域（folder） | `backend-integration/issues/16-folder-domain.md` |
 
 ### 4.2 `evolving` —— 进行中（了解下一步）
 
@@ -116,8 +118,18 @@ pnpm build                                   # vue-tsc -b && vite build
 | 文档可见性（ACL） | `backend-integration/issues/09-document-visibility-plan.md` |
 | Agentic RAG | `backend-integration/issues/11-agentic-rag.md` |
 | Graph RAG | `backend-integration/issues/12-graph-rag.md` |
+| **Mock 模块建设总纲** | `backend-integration/issues/14-mock-modules-backlog.md`（入口，含依赖图与排序） |
+| 分类与标签域 | `backend-integration/issues/17-doc-meta-domain.md` |
+| 用户与部门域 | `backend-integration/issues/18-user-org-domain.md` |
+| 操作日志 | `backend-integration/issues/19-operation-log.md` |
+| 大盘聚合 | `backend-integration/issues/20-dashboard-stats.md` |
+| 公告模块 | `backend-integration/issues/21-announcement-domain.md` |
 
-> 这是一条**演进链**：`06/07` → `09` → `11` → `12`。其中 `11`、`12` 明确声明**不推翻** `08` 的流式协议与 tool-calling 骨架 —— 改 AI 对话链路时，先确认自己站在这条链的哪一环。
+> **AI 对话演进链**：`06/07` → `09` → `11` → `12`。其中 `11`、`12` 明确声明**不推翻** `08` 的流式协议与 tool-calling 骨架 —— 改 AI 对话链路时，先确认自己站在这条链的哪一环。
+>
+> **Mock 资源建设链**：`14`（总纲）→ `15/16/17/18`（并行）→ `19` → `20` → `21`。这 8 份工单把剩余的 7 个 Mock 资源（folders / users / stats / categories / tags / announcements / operations）+ departments + team 接入真实后端，并**撤销工单 05 的降级清单**。改任一处前先读 `14` 的依赖图与决策记录。
+>
+> **进度**：`15`（团队，纯前端）、`16`（目录树）已交付并转为 `current`；下一批从 `17` 分类与标签起。
 
 ### 4.3 `historical` —— 设计背景（默认不读，仅在需要理解「当初为什么这么设计」时查）
 

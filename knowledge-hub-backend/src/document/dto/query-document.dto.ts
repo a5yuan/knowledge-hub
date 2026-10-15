@@ -27,6 +27,11 @@ export class QueryDocumentDto {
   @IsString()
   category_id?: string;
 
+  /** 目录ID（雪花ID；16 号工单按目录筛选） */
+  @IsOptional()
+  @IsString()
+  folder_id?: string;
+
   /** 团队ID（雪花ID） */
   @IsOptional()
   @IsString()

@@ -5,6 +5,12 @@ export type UserStatus = 'active' | 'disabled'
 export type Visibility = 'private' | 'department' | 'company'
 /** 分区：我的文档 / 公共文档 / 部门文档 / 文档归档 */
 export type DocZone = 'mine' | 'public' | 'department' | 'archive'
+/**
+ * 目录分区（16 号工单）：仅三个真分区。
+ * archive 是文档状态（status=3）而非分区，故目录表 kh_folder 不接受 archive；
+ * 目录请求遇到 archive 应直接返回空，而不是把 status 当 zone 发给后端。
+ */
+export type DocFolderZone = 'mine' | 'public' | 'department'
 export type ParseStatus = 'pending' | 'processing' | 'done' | 'failed'
 /** 后端文档生命周期阶段（spec §4.2） */
 export type DocStatus = 0 | 1 | 2 | 3

@@ -26,6 +26,14 @@ export class CreateDocumentDto {
   @IsString()
   category_id?: string;
 
+  /**
+   * 所属目录ID（雪花ID；16 号工单）
+   * 显式允许 null：PATCH 传 null 表示「移回根目录」（@IsOptional 对 null 跳过 @IsString 校验）
+   */
+  @IsOptional()
+  @IsString()
+  folder_id?: string | null;
+
   /** 所属团队ID（雪花ID） */
   @IsOptional()
   @IsString()

@@ -12,6 +12,7 @@ import { SearchModule } from './search/search.module';
 import { KgModule } from './kg/kg.module';
 import { AuthModule } from './auth/auth.module';
 import { TeamModule } from './team/team.module';
+import { FolderModule } from './folder/folder.module';
 import { RagModule } from './rag/rag.module';
 import { AiModule } from './ai/ai.module';
 import { ObservabilityModule } from './observability/observability.module';
@@ -43,6 +44,7 @@ import { ObservabilityModule } from './observability/observability.module';
     DocumentModule,
     AuthModule,
     TeamModule,
+    FolderModule,
     MqModule,
     EsModule,
     PipelineModule,

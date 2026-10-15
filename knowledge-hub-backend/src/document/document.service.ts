@@ -176,6 +176,7 @@ export class DocumentService {
             id,
             title,
             category_id,
+            folder_id,
             team_id,
             author_id,
             tags,
@@ -187,6 +188,7 @@ export class DocumentService {
             .where('d.deleted = :deleted', { deleted: false });
         if (id !== undefined) qb.andWhere('d.id = :id', { id });
         if (category_id !== undefined) qb.andWhere('d.category_id = :category_id', { category_id });
+        if (folder_id !== undefined) qb.andWhere('d.folder_id = :folder_id', { folder_id });
         if (team_id !== undefined) qb.andWhere('d.team_id = :team_id', { team_id });
         if (author_id !== undefined) qb.andWhere('d.author_id = :author_id', { author_id });
         if (status !== undefined) qb.andWhere('d.status = :status', { status });

@@ -100,11 +100,8 @@ function buildFolderTree(folders: Folder[]): FolderNode[] {
 }
 
 async function loadFolders(): Promise<void> {
-  // 真实模式无 folders 后端：目录树显示空态说明而非 Mock 数据（避免与真实文档无关的假层级，spec 工单 05）
-  if (realMode.value) {
-    folderTree.value = []
-    return
-  }
+  // 16 号工单撤销工单 05 的降级：folders 已接真实后端，两种通道都常态拉取。
+  // archive 不是目录分区 —— fetchFolders 在真实通道下直接返回空数组，不发起请求。
   try {
     folderTree.value = buildFolderTree(await fetchFolders({ zone: zone.value }))
   } catch {
@@ -117,13 +114,16 @@ function onFolderClick(data: FolderNode): void {
 }
 
 async function onCreateFolder(): Promise<void> {
+  // archive 是文档状态而非目录分区：不提供建目录能力（按钮已由模板 v-if 隐藏，此处兜底收窄类型）
+  const currentZone = zone.value
+  if (currentZone === 'archive') return
   const { value } = await ElMessageBox.prompt('文件夹名称', '新建文件夹', {
     inputPattern: /\S+/,
     inputErrorMessage: '名称不能为空',
   }).catch(() => ({ value: '' }))
   if (!value?.trim()) return
   try {
-    await createFolder({ name: value.trim(), zone: zone.value, parentId: folderId.value ?? null })
+    await createFolder({ name: value.trim(), zone: currentZone, parentId: folderId.value ?? null })
     ElMessage.success('文件夹已创建')
     loadFolders()
   } catch (error) {
@@ -479,15 +479,13 @@ function onPreview(doc: DocumentWithOwner): void {
 
       <div class="folder-head">
         文件夹
-        <el-tooltip v-if="!realMode" content="后端暂未提供文件夹接口，目录树为演示数据" placement="top">
+        <el-tooltip v-if="!realMode" content="当前为 Mock 通道，目录树为演示数据" placement="top">
           <el-icon class="folder-hint">
             <InfoFilled />
           </el-icon>
         </el-tooltip>
       </div>
-      <!-- 真实模式：后端无 folders 接口，显示空态说明而非静默空白（spec 工单 05） -->
-      <div v-if="realMode" class="folder-empty">后端暂未提供文件夹接口，目录功能暂不可用</div>
-      <el-tree v-else class="folder-tree" :data="treeData" node-key="id" :props="{ label: 'name' }" default-expand-all
+      <el-tree class="folder-tree" :data="treeData" node-key="id" :props="{ label: 'name' }" default-expand-all
         highlight-current :current-node-key="''" @current-change="onFolderClick" />
     </el-aside>
 
@@ -499,8 +497,7 @@ function onPreview(doc: DocumentWithOwner): void {
           <el-button v-permission="'document:create'" :icon="Upload" @click="uploadVisible = true">批量上传</el-button>
           <el-button v-if="!realMode" v-permission="'document:create'" :icon="EditPen"
             @click="onCreateOnline">新建在线文档</el-button>
-          <!-- 新建文件夹依赖 folders 后端（真实模式无接口），隐藏避免点了没反应 -->
-          <el-button v-if="!realMode" :icon="FolderAdd" @click="onCreateFolder">新建文件夹</el-button>
+          <el-button :icon="FolderAdd" @click="onCreateFolder">新建文件夹</el-button>
         </template>
         <div class="toolbar-spacer" />
         <el-select v-model="fileType" class="filter-select" placeholder="文件类型" clearable>
@@ -787,13 +784,6 @@ function onPreview(doc: DocumentWithOwner): void {
 .folder-hint {
   cursor: help;
   font-size: 12px;
-}
-
-.folder-empty {
-  padding: 10px;
-  font-size: 12px;
-  color: #a8abb2;
-  line-height: 1.6;
 }
 
 .folder-tree {

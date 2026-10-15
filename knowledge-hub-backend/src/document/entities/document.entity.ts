@@ -36,6 +36,10 @@ export class KhDocument {
   @Column({ type: 'bigint', nullable: true })
   category_id: string | null;
 
+  /** 所属目录ID（16 号工单：严格归属单亲，NULL = 根目录） */
+  @Column({ type: 'bigint', nullable: true })
+  folder_id: string | null;
+
   /** 所属团队ID（知识库空间） */
   @Column({ type: 'bigint', nullable: true })
   team_id: string | null;

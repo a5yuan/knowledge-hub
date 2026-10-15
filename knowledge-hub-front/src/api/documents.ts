@@ -136,6 +136,8 @@ export async function uploadDocuments(
       // category_id 仅在后端为 bigint 列：Mock 分类 id（cat-*）不可表达，静默跳过属有损降级（spec §5.2 建议 10）
       const patch: Record<string, unknown> = {}
       if (meta.categoryId && /^\d+$/.test(meta.categoryId)) patch.category_id = meta.categoryId
+      // 16 号工单：上传时选中的目录归属一并补写（后端 upload 不接收 folder_id）
+      if (meta.folderId) patch.folder_id = meta.folderId
       if (meta.tagIds?.length) patch.tags = meta.tagIds.join(',')
       if (meta.visibility && meta.visibility !== 'department') patch.is_public = meta.visibility === 'company'
       if (Object.keys(patch).length > 0) {
@@ -165,7 +167,7 @@ export async function uploadDocuments(
 function uploadedToDocument(
   id: string,
   file: File,
-  meta: Partial<Pick<DocumentCreatePayload, 'categoryId' | 'tagIds' | 'visibility'>>,
+  meta: Partial<Pick<DocumentCreatePayload, 'categoryId' | 'tagIds' | 'visibility' | 'folderId'>>,
   me: string,
   fileUrl: string | null,
 ): DocumentWithOwner {
@@ -178,7 +180,7 @@ function uploadedToDocument(
     tagIds: meta.tagIds ?? [],
     visibility: meta.visibility === 'company' ? 'company' : 'private',
     zone: 'mine',
-    folderId: null,
+    folderId: meta.folderId ?? null,
     ownerId: me,
     parseStatus: 'pending',
     type: 'file',
@@ -208,7 +210,7 @@ export async function fetchDocument(id: string): Promise<DocumentDetail> {
 }
 
 /**
- * 更新文档。真实通道映射 snake_case：title / category_id / tags(CSV) / is_public
+ * 更新文档。真实通道映射 snake_case：title / category_id / folder_id / tags(CSV) / is_public
  * （visibility=department 写侧降级为 private，spec §4.4）。正文体真实模式由 Editor 降级保证不发送。
  */
 export async function updateDocument(
@@ -221,6 +223,8 @@ export async function updateDocument(
     if (payload.title !== undefined) body.title = payload.title
     // category_id 后端为 bigint 列：Mock 分类 id（cat-*）不可表达，仅透传雪花字符串
     if (payload.categoryId !== undefined && /^\d+$/.test(payload.categoryId)) body.category_id = payload.categoryId
+    // 16 号工单：目录归属可写（null = 移回根目录，后端 DTO 已允许 null）
+    if (payload.folderId !== undefined) body.folder_id = payload.folderId
     if (payload.tagIds !== undefined) body.tags = payload.tagIds.join(',')
     if (payload.visibility !== undefined && payload.visibility !== 'department') {
       body.is_public = payload.visibility === 'company'
@@ -248,6 +252,23 @@ export async function deleteDocument(id: string): Promise<{ id: string }> {
 export async function batchDocuments(payload: DocumentBatchPayload): Promise<{ affected: number }> {
   const { baseURL, url } = endpoint('documents')
   if (isReal({ baseURL })) {
+    // 16 号工单：后端无 POST /documents/batch，移动改为前端扇出 N 次 PATCH { folder_id }
+    if (payload.action === 'move') {
+      const folderId = payload.folderId
+      if (!folderId) return Promise.reject(new ApiError(-1, '请指定目标目录'))
+      const results = await Promise.allSettled(
+        payload.ids.map((id) => {
+          const ep = endpoint('documents', `/${id}`)
+          return request<unknown>({
+            baseURL: ep.baseURL,
+            url: ep.url,
+            method: 'patch',
+            data: { folder_id: folderId },
+          })
+        }),
+      )
+      return { affected: results.filter((r) => r.status === 'fulfilled').length }
+    }
     if (payload.action !== 'delete') {
       return Promise.reject(new ApiError(-1, '真实模式不支持批量归档/恢复（后端无对应接口，且归档为终态）'))
     }
