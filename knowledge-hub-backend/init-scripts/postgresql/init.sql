@@ -284,3 +284,101 @@ CREATE INDEX IF NOT EXISTS idx_kh_folder_zone ON kh_folder(zone) WHERE deleted =
 ALTER TABLE kh_document ADD COLUMN IF NOT EXISTS folder_id BIGINT;
 CREATE INDEX IF NOT EXISTS idx_kh_document_folder_id ON kh_document(folder_id);
 
+-- ==================== 分类与标签（17 号工单） ====================
+
+-- 文档分类（扁平字典，不做层级）；category_code 供前端 Category.key（slug）
+CREATE TABLE IF NOT EXISTS kh_category (
+    id BIGINT PRIMARY KEY,                          -- 分类 ID（雪花）
+    category_name VARCHAR(50) NOT NULL,             -- 分类名称
+    category_code VARCHAR(50),                      -- 分类编码（slug，供前端 key）
+    sort INT NOT NULL DEFAULT 0,                    -- 排序
+    status SMALLINT NOT NULL DEFAULT 1,             -- 0 禁用 1 启用
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    create_by BIGINT,
+    update_by BIGINT,
+    deleted BOOLEAN NOT NULL DEFAULT false
+);
+-- 未删除分类名/编码唯一：部分唯一索引让软删行退出唯一性约束（否则删掉的名字无法复用）
+CREATE UNIQUE INDEX IF NOT EXISTS uk_kh_category_name ON kh_category(category_name) WHERE deleted = false;
+CREATE UNIQUE INDEX IF NOT EXISTS uk_kh_category_code ON kh_category(category_code) WHERE deleted = false;
+
+-- 文档标签（扁平字典）；use_count 为冗余引用计数，增删关联后按关联表重算（幂等，不做自增自减）
+CREATE TABLE IF NOT EXISTS kh_tag (
+    id BIGINT PRIMARY KEY,                          -- 标签 ID（雪花）
+    tag_name VARCHAR(50) NOT NULL,                  -- 标签名称
+    use_count INT NOT NULL DEFAULT 0,               -- 引用计数（冗余，可重算）
+    status SMALLINT NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    create_by BIGINT,
+    update_by BIGINT,
+    deleted BOOLEAN NOT NULL DEFAULT false
+);
+CREATE UNIQUE INDEX IF NOT EXISTS uk_kh_tag_name ON kh_tag(tag_name) WHERE deleted = false;
+
+-- 文档-标签关联（多对多）：D 方案的唯一真相源（写侧以本表为准，读侧只认本表）
+CREATE TABLE IF NOT EXISTS kh_document_tag (
+    id BIGINT PRIMARY KEY,                          -- 关联 ID（雪花）
+    document_id BIGINT NOT NULL REFERENCES kh_document(id),
+    tag_id BIGINT NOT NULL REFERENCES kh_tag(id),
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),    -- 决策 #5：与 kh_user_role / kh_role_permission 对齐
+    UNIQUE (document_id, tag_id)
+);
+CREATE INDEX IF NOT EXISTS idx_kh_document_tag_tag_id ON kh_document_tag(tag_id);
+
+-- 分类外键索引（category_id 列已存在于 kh_document，本工单仅补索引）
+CREATE INDEX IF NOT EXISTS idx_kh_document_category_id ON kh_document(category_id);
+
+-- 种子分类（与前端 Mock 对齐，保证切通道后 UI 不空）
+INSERT INTO kh_category (id, category_name, category_code, sort) VALUES
+    (6000000000000000001, '技术文档', 'tech', 1),
+    (6000000000000000002, '产品文档', 'product', 2),
+    (6000000000000000003, '管理制度', 'policy', 3),
+    (6000000000000000004, '会议纪要', 'meeting', 4),
+    (6000000000000000005, '其他', 'other', 99)
+ON CONFLICT (id) DO NOTHING;
+
+-- 种子标签（与前端 Mock 对齐）
+INSERT INTO kh_tag (id, tag_name) VALUES
+    (7000000000000000001, 'NestJS'),
+    (7000000000000000002, 'RAG'),
+    (7000000000000000003, '知识图谱'),
+    (7000000000000000004, '前端'),
+    (7000000000000000005, '性能优化')
+ON CONFLICT (id) DO NOTHING;
+
+-- 存量迁移：把 kh_document.tags 逗号串拆成关联行（标签名未登记入 kh_tag 则跳过；幂等可重跑）
+-- 当前环境无存量数据，脚本不实际生效；留档以便生产环境复用时直接搬用
+INSERT INTO kh_document_tag (id, document_id, tag_id)
+SELECT
+    (EXTRACT(EPOCH FROM clock_timestamp())::BIGINT * 1000000
+     + ROW_NUMBER() OVER ())::BIGINT,
+    d.id,
+    t.id
+FROM kh_document d
+CROSS JOIN LATERAL unnest(string_to_array(d.tags, ',')) AS tag_name(name)
+JOIN kh_tag t ON t.tag_name = trim(tag_name.name) AND t.deleted = false
+WHERE d.tags IS NOT NULL
+  AND d.tags <> ''
+  AND d.deleted = false
+ON CONFLICT (document_id, tag_id) DO NOTHING;
+
+-- 迁移后重算引用计数（按关联表实际行数覆盖，幂等）
+UPDATE kh_tag SET use_count = (
+    SELECT COUNT(*) FROM kh_document_tag WHERE tag_id = kh_tag.id
+);
+
+-- 分类/标签管理权限码（parent = 文档中心菜单，按钮级 type=2，接口校验复用同码）
+INSERT INTO kh_permission (id, parent_id, permission_name, permission_code, permission_type, sort) VALUES
+    (4000000000000000061, 4000000000000000002, '分类管理', 'doc:meta:category', 2, 6),
+    (4000000000000000062, 4000000000000000002, '标签管理', 'doc:meta:tag', 2, 7)
+ON CONFLICT (id) DO NOTHING;
+
+-- ROLE_USER(2000000000000000003) 授权；注意 POST /tag 不挂权限码（文档编写的自由输入创建流程需要）
+-- 这里用裸 ON CONFLICT DO NOTHING：kh_role_permission 上是列级 UNIQUE(role_id, permission_id)，
+-- 只写 ON CONFLICT (id) 在重跑时会撞列级约束抛错（init.sql 既有 4 处同款缺陷）
+INSERT INTO kh_role_permission (id, role_id, permission_id) VALUES
+    (4100000000000000015, 2000000000000000003, 4000000000000000061),
+    (4100000000000000016, 2000000000000000003, 4000000000000000062)
+ON CONFLICT DO NOTHING;

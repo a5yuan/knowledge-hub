@@ -17,7 +17,10 @@ export interface BackendDocument {
   team_id: string | null
   author_id: string | null
   create_by: string | null
+  /** 标签（逗号分隔派生串；17 号工单 D 方案后禁止解析，仅供 ES/RAG 文本匹配与向后兼容） */
   tags: string | null
+  /** 标签ID列表（17 号工单：由 kh_document_tag 关联表得出，是标签归属的唯一读取来源） */
+  tag_ids?: string[]
   status: number
   is_public: boolean
   created_at: string
@@ -57,18 +60,6 @@ export interface BackendReviewRecord {
   created_at: string
 }
 
-/** tags 存储：CSV / JSON 数组两种格式，统一还原为 string[] */
-function parseTags(raw: string | null): string[] {
-  if (!raw) return []
-  try {
-    const parsed = JSON.parse(raw) as unknown
-    if (Array.isArray(parsed)) return parsed.map(String)
-  } catch {
-    // 非 JSON，按 CSV 处理
-  }
-  return raw.split(',').map((t) => t.trim()).filter(Boolean)
-}
-
 /** parse_state → 前端 ParseStatus（running→processing、success→done，其余同名） */
 function mapParseState(state: BackendDocumentDetail['parse_state']): ParseStatus | undefined {
   if (!state) return undefined
@@ -89,7 +80,8 @@ export function mapDocument(raw: BackendDocument): DocumentItem {
     title: raw.title,
     summary: raw.summary ?? '',
     categoryId: raw.category_id != null ? String(raw.category_id) : '',
-    tagIds: parseTags(raw.tags),
+    // 17 号工单：标签读侧只认关联表（后端 findAll/findOne 已按页批量补 tag_ids），绝不解析 tags 串
+    tagIds: (raw.tag_ids ?? []).map(String),
     visibility: raw.is_public ? 'company' : 'private',
     // 有损（spec §4.4）：后端无部门维度，读侧永不产生 department
     zone: 'mine',
@@ -219,6 +211,8 @@ export function toBackendListQuery(
   }
   // 16 号工单：按目录筛选（空值/未选 = 不过滤，即左侧「全部文档」）
   if (query.folderId) params.folder_id = query.folderId
+  // 17 号工单：按分类筛选（仅雪花ID可表达；Mock 分类 id 形如 cat-1，真实通道无法传）
+  if (query.categoryId && /^\d+$/.test(query.categoryId)) params.category_id = query.categoryId
   const kw = query.keyword?.trim()
   if (kw) params.title = kw
   return params

@@ -10,9 +10,9 @@ import type { Category, FileType, SearchResultItem, Visibility } from '@/types/a
 import HighlightText from './components/HighlightText.vue'
 
 /**
- * 智能搜索（工单 08 / 工单 04 对接降级）：
- * - 真实通道：ES 全文检索仅支持 q/page/pageSize（高级筛选面板禁用并标注），
- *   结果无分类/标签/权限/fileType——对应占位与标签显式隐藏，时间语义为发布时间
+ * 智能搜索（工单 08 / 工单 04 对接降级 / 17 号工单恢复分类筛选）：
+ * - 真实通道：ES 全文检索支持 q/page/pageSize + category_id；分类与标签由后端随行返回，
+ *   文件类型与日期范围后端仍不支持（保持禁用并标注）
  * - Mock 通道：行为与 MVP 完全一致（含相关度排序与权限过滤）
  * - 搜索历史为 localStorage（spec §8）；热门搜索钉在 Mock 通道（后端无 /search/hot）
  * - 真实检索仅覆盖已发布文档（ES 索引仅 status=1），搜不到草稿属正确行为
@@ -132,6 +132,16 @@ function fileTypeText(item: SearchResultItem): string {
   return item.fileType ? item.fileType.toUpperCase() : '文档'
 }
 
+/**
+ * 分类名解析（17 号工单）：Mock 直接提供 categoryName；真实通道后端只回 category_id，
+ * 用页面上已加载的 categories 字典就地反查，不额外发请求、也不把分类名冗余进 ES。
+ */
+function categoryNameOf(item: SearchResultItem): string {
+  if (item.categoryName) return item.categoryName
+  if (!item.categoryId) return ''
+  return categories.value.find((c) => c.id === item.categoryId)?.name ?? ''
+}
+
 onMounted(async () => {
   history.value = getSearchHistory()
   try {
@@ -169,21 +179,22 @@ onMounted(async () => {
       </div>
 
       <div v-show="advancedVisible" class="advanced-panel">
-        <!-- 真实通道 SearchQueryDto 仅收 q/page/pageSize，其余参数被静默剥离（工单 04：禁用并标注，避免无声空转） -->
-        <el-alert v-if="realMode" title="当前后端仅支持关键词检索，以下筛选暂不生效" type="info" :closable="false" class="filter-hint"
-          show-icon />
+        <!-- 17 号工单：分类筛选已打通（后端 SearchQueryDto 支持 category_id）；
+             文件类型与日期范围后端仍未支持，保持禁用并标注，避免无声空转 -->
+        <el-alert v-if="realMode" title="文件类型与日期范围后端暂不支持；文档分类已可筛选" type="info" :closable="false"
+          class="filter-hint" show-icon />
         <el-select v-model="fileType" placeholder="文件类型" clearable class="filter-item" :disabled="realMode">
           <el-option v-for="opt in FILE_TYPE_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
         <el-date-picker v-model="dateRange" type="daterange" value-format="YYYY-MM-DD" range-separator="至"
           start-placeholder="更新起始" end-placeholder="更新截止" class="filter-item" :disabled="realMode" />
-        <el-select v-model="categoryId" placeholder="文档分类" clearable class="filter-item" :disabled="realMode">
+        <el-select v-model="categoryId" placeholder="文档分类" clearable class="filter-item">
           <el-option v-for="c in categories" :key="c.id" :label="c.name" :value="c.id" />
         </el-select>
         <el-select v-model="visibility" placeholder="权限范围" clearable class="filter-item" :disabled="realMode">
           <el-option v-for="opt in VISIBILITY_OPTIONS" :key="opt.value" :label="opt.label" :value="opt.value" />
         </el-select>
-        <el-button type="primary" :icon="Search" :disabled="realMode" @click="onFilterSearch">筛选</el-button>
+        <el-button type="primary" :icon="Search" @click="onFilterSearch">筛选</el-button>
         <el-button :icon="Refresh" @click="resetFilters">重置</el-button>
       </div>
 
@@ -240,13 +251,11 @@ onMounted(async () => {
               <HighlightText :text="item.summary" :keyword="executedQuery" />
             </div>
             <div class="item-meta">
-              <!-- 真实结果无分类/标签/权限数据：隐藏对应占位而非显示误导文案（工单 04） -->
-              <span v-if="!realMode" class="crumb">{{ item.categoryName || '未分类' }}</span>
-              <template v-if="!realMode">
-                <el-tag v-for="tag in item.tags" :key="tag" size="small" effect="plain" class="item-tag">
-                  <HighlightText :text="tag" :keyword="executedQuery" />
-                </el-tag>
-              </template>
+              <!-- 17 号工单：分类/标签改为数据驱动 —— 有数据才渲染（Mock 直接给 categoryName，真实通道用已加载字典反查） -->
+              <span v-if="categoryNameOf(item)" class="crumb">{{ categoryNameOf(item) }}</span>
+              <el-tag v-for="tag in item.tags" :key="tag" size="small" effect="plain" class="item-tag">
+                <HighlightText :text="tag" :keyword="executedQuery" />
+              </el-tag>
               <span class="meta-time">发布于 {{ new Date(item.updatedAt).toLocaleString('zh-CN', { hour12: false })
               }}</span>
               <!-- 可选链兜底 + 真实模式隐藏：后端结果无 visibility，undefined.tag 会白屏（工单 04 崩溃点） -->

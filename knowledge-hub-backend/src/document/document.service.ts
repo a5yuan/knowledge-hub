@@ -37,6 +37,7 @@ import { VectorIndexService } from '../es/vector-index.service';
 import { DocIndexService } from '../es/doc-index.service';
 import { isDocVisible, type VisibilityScope } from '../es/visibility-scope';
 import { KgService } from '../kg/kg.service';
+import { TagsService } from '../doc-meta/tags.service';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 /** 文档状态机：仅 1=已发布 参与三套索引（kh_chunk / kh_document / Neo4j） */
@@ -67,6 +68,8 @@ export class DocumentService {
         private readonly docIndex: DocIndexService,
         private readonly kg: KgService,
         private readonly config: ConfigService,
+        // 17 号工单：标签归属的唯一真相源在关联表，写侧与读侧都必须经本服务
+        private readonly tagsService: TagsService,
     ) {
         this.reviewEnabled = this.config.get('REVIEW_ENABLED') === 'true';
     }
@@ -152,16 +155,25 @@ export class DocumentService {
         if (this.reviewEnabled && dto.status === STATUS_PUBLISHED) {
             throw new BadRequestException('审核已开启，请创建草稿后走 /publish 提审流程');
         }
+        // 17 号工单：tag_ids 走关联表；tags 是派生值，剔除避免客户端直写造成串/关联漂移
+        const { tag_ids, ...rest } = dto;
+        delete (rest as { tags?: string }).tags;
+
         const id = this.snowflake.generate();
         const content = await this.contentModel.create({ documentId: id });
         const doc = this.documentRepo.create({
-            ...dto,
+            ...rest,
             id,
             content_id: content._id.toString(),
             author_id: dto.author_id ?? user?.userId ?? null,
             create_by: dto.create_by ?? user?.userId ?? null,
         });
-        return this.documentRepo.save(doc);
+        const saved = await this.documentRepo.save(doc);
+        const tagIds = tag_ids ?? [];
+        if (tagIds.length > 0) {
+            await this.tagsService.replaceDocumentTags(saved.id, tagIds);
+        }
+        return { ...saved, tag_ids: tagIds };
     }
 
     /**
@@ -194,6 +206,8 @@ export class DocumentService {
         if (status !== undefined) qb.andWhere('d.status = :status', { status });
         if (is_public !== undefined) qb.andWhere('d.is_public = :is_public', { is_public });
         if (title !== undefined) qb.andWhere('d.title LIKE :title', { title: `%${title}%` });
+        // ⚠️ 17 号工单遗留：这是对「派生串」的模糊匹配（D 方案下串只是历史兼容值）。
+        // 前端已不再发送该参数；保留仅为不破坏既有调用方。后续应改为按关联表 tag_id 过滤。
         if (tags !== undefined) qb.andWhere('d.tags LIKE :tags', { tags: `%${tags}%` });
         if (scope && !scope.isAdmin) {
             // 语义与 es/visibility-scope.ts 的 buildVisibilityFilter 一一对应
@@ -230,7 +244,14 @@ export class DocumentService {
             .skip((page - 1) * pageSize)
             .take(pageSize)
             .getManyAndCount();
-        return { items, total, page, pageSize };
+        // 17 号工单：标签由关联表得出（绝不解析 tags 串）；一次 SQL 覆盖整页，避免 N+1
+        const tagMap = await this.tagsService.getTagIdsByDocuments(items.map((d) => d.id));
+        return {
+            items: items.map((d) => ({ ...d, tag_ids: tagMap.get(String(d.id)) ?? [] })),
+            total,
+            page,
+            pageSize,
+        };
     }
 
     /**
@@ -251,8 +272,11 @@ export class DocumentService {
             documentId: docId,
             deleted: false,
         });
+        // 17 号工单：标签由关联表得出（读侧只认关联表）
+        const tagMap = await this.tagsService.getTagIdsByDocuments([docId]);
         return {
             ...doc,
+            tag_ids: tagMap.get(String(docId)) ?? [],
             content: content?.content ?? null,
             parse_state: content?.parse_state ?? 'pending',
             parse_error: content?.parse_error ?? null,
@@ -500,16 +524,18 @@ export class DocumentService {
      */
     private async dispatchIndex(doc: KhDocument): Promise<void> {
         try {
-            const content = await this.contentModel.findOne({
-                documentId: doc.id,
-                deleted: false,
-            });
+            const [content, tagNames] = await Promise.all([
+                this.contentModel.findOne({ documentId: doc.id, deleted: false }),
+                // 17 号工单：标签取自关联表，不解析 doc.tags 串
+                this.tagsService.getTagNamesByDocument(doc.id),
+            ]);
             const snapshot: DocumentIndexPayload = {
                 docId: doc.id,
                 title: doc.title,
                 summary: doc.summary,
                 content: content?.content ?? '',
-                tags: doc.tags,
+                // ES mapping 中 tags 为 keyword 数组：必须投递数组，逗号串会让 term 过滤永不命中
+                tags: tagNames.length > 0 ? tagNames : null,
                 authorId: doc.author_id,
                 categoryId: doc.category_id,
                 teamId: doc.team_id,
@@ -541,17 +567,29 @@ export class DocumentService {
             throw new NotFoundException(`文档 ${docId} 不存在`);
         }
         const prevStatus = doc.status;
-        Object.assign(doc, dto);
+        // 17 号工单：tag_ids 走关联表；tags 是派生值，剔除避免客户端直写造成串/关联漂移
+        const { tag_ids, ...rest } = dto;
+        const patch: Partial<UpdateDocumentDto> = { ...rest };
+        delete patch.tags;
+        Object.assign(doc, patch);
         // PATCH 触发的发布同样补齐 publish_time，与 publish 接口行为一致
         if (doc.status === 1 && prevStatus !== 1 && !doc.publish_time) {
             doc.publish_time = new Date();
         }
         const saved = await this.documentRepo.save(doc);
+        // 显式判 !== undefined：不传 = 不改动标签；传 [] = 清空标签（与 folder_id 的 null 语义同款）
+        let tagIds: string[];
+        if (tag_ids !== undefined) {
+            await this.tagsService.replaceDocumentTags(docId, tag_ids);
+            tagIds = [...new Set(tag_ids.map((t) => String(t)))];
+        } else {
+            tagIds = (await this.tagsService.getTagIdsByDocuments([docId])).get(String(docId)) ?? [];
+        }
         if (saved.status === 1 && prevStatus !== 1) {
             void this.dispatchPublish(saved);
             void this.dispatchIndex(saved);
         }
-        return saved;
+        return { ...saved, tag_ids: tagIds };
     }
 
     /** 删除文档：PG 与 Mongo 均逻辑删除（deleted = true），并清理 ES 中 kh_chunk/kh_document 数据 */

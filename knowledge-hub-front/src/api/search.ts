@@ -4,21 +4,28 @@ import { mapSearchItem, type BackendSearchItem } from './adapters/search'
 import type { PageResult, SearchQuery, SearchResultItem } from '@/types/api'
 
 /**
- * 关键词检索：真实通道仅透传 q/page/pageSize（后端 SearchQueryDto 只收这三个，
- * 其余参数会被 ValidationPipe 静默剥离——高级筛选面板由视图层禁用保证不发送）。
+ * 关键词检索。真实通道透传 q/page/pageSize + category_id（17 号工单）——
+ * 后端 SearchQueryDto 支持 category_id/tags/is_public 等 filter，但前端高级面板中
+ * 文件类型与日期范围后端仍未支持，由视图层保持禁用以免无声空转。
  */
 export async function search(params: SearchQuery): Promise<PageResult<SearchResultItem>> {
   const { baseURL, url } = endpoint('search')
+  const real = isReal({ baseURL })
+  const realParams: Record<string, string | number> = {
+    q: params.q,
+    page: params.page ?? 1,
+    pageSize: params.pageSize ?? 10,
+  }
+  // 分类筛选：仅雪花ID可表达（Mock 分类 id 形如 cat-1，真实通道传过去会被后端静默丢掉）
+  if (params.categoryId && /^\d+$/.test(params.categoryId)) realParams.category_id = params.categoryId
   const config = {
     baseURL,
     url,
     method: 'get' as const,
-    params: isReal({ baseURL })
-      ? { q: params.q, page: params.page ?? 1, pageSize: params.pageSize ?? 10 }
-      : params,
+    params: real ? realParams : params,
   }
   const raw = await request<unknown>(config)
-  if (!isReal(config)) {
+  if (!real) {
     return raw as PageResult<SearchResultItem>
   }
   const page = raw as { total: number; page: number; pageSize: number; items: BackendSearchItem[] }

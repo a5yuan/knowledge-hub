@@ -138,7 +138,8 @@ export async function uploadDocuments(
       if (meta.categoryId && /^\d+$/.test(meta.categoryId)) patch.category_id = meta.categoryId
       // 16 号工单：上传时选中的目录归属一并补写（后端 upload 不接收 folder_id）
       if (meta.folderId) patch.folder_id = meta.folderId
-      if (meta.tagIds?.length) patch.tags = meta.tagIds.join(',')
+      // 17 号工单：标签走关联表（tag_ids 整体替换）；不再写派生的 tags 逗号串
+      if (meta.tagIds?.length) patch.tag_ids = meta.tagIds
       if (meta.visibility && meta.visibility !== 'department') patch.is_public = meta.visibility === 'company'
       if (Object.keys(patch).length > 0) {
         const ep = endpoint('documents', `/${raw.id}`)
@@ -210,7 +211,8 @@ export async function fetchDocument(id: string): Promise<DocumentDetail> {
 }
 
 /**
- * 更新文档。真实通道映射 snake_case：title / category_id / folder_id / tags(CSV) / is_public
+ * 更新文档。真实通道映射 snake_case：title / category_id / folder_id / tag_ids / is_public
+ * （17 号工单：标签改走 tag_ids 关联表，不再写派生的 tags 逗号串）
  * （visibility=department 写侧降级为 private，spec §4.4）。正文体真实模式由 Editor 降级保证不发送。
  */
 export async function updateDocument(
@@ -225,7 +227,8 @@ export async function updateDocument(
     if (payload.categoryId !== undefined && /^\d+$/.test(payload.categoryId)) body.category_id = payload.categoryId
     // 16 号工单：目录归属可写（null = 移回根目录，后端 DTO 已允许 null）
     if (payload.folderId !== undefined) body.folder_id = payload.folderId
-    if (payload.tagIds !== undefined) body.tags = payload.tagIds.join(',')
+    // 17 号工单：标签走关联表整体替换（tag_ids）；[] = 清空标签，与后端「显式判 undefined」语义对齐
+    if (payload.tagIds !== undefined) body.tag_ids = payload.tagIds
     if (payload.visibility !== undefined && payload.visibility !== 'department') {
       body.is_public = payload.visibility === 'company'
     }

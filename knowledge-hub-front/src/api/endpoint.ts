@@ -25,11 +25,12 @@ const REAL_ROOT: Record<string, string> = {
   teams: '/team',
   // 16 号工单：目录模块（复数→单数重写）
   folders: '/folder',
+  // 17 号工单：分类与标签字典（复数→单数重写）
+  categories: '/category',
+  tags: '/tag',
   // 以下资源后端未实现，真实通道不会命中（endpoint 返回 mock 通道）
   users: '/users',
   stats: '/stats',
-  categories: '/categories',
-  tags: '/tags',
   announcements: '/announcements',
   operations: '/operations',
 }
@@ -51,10 +52,11 @@ const DEFAULT_MODE: Record<ResourceName, 'real' | 'mock'> = {
   ai: 'real',
   teams: 'real',
   folders: 'real',
+  // 17 号工单：分类与标签接入真实后端
+  categories: 'real',
+  tags: 'real',
   users: 'mock',
   stats: 'mock',
-  categories: 'mock',
-  tags: 'mock',
   announcements: 'mock',
   operations: 'mock',
 }

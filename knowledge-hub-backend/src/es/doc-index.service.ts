@@ -14,6 +14,10 @@ export interface DocSearchItem {
     word_count: number;
     publish_time: string | null;
     score: number | null;
+    /** 17 号工单：分类ID（前端用已加载的分类字典解析名称，避免把名称冗余进 ES） */
+    category_id: string | null;
+    /** 17 号工单：标签名数组（keyword 数组，来源是关联表同步的派生串） */
+    tags: string[];
     /** 命中片段高亮（默认 <em> 标签包裹），title/summary 整段、content 为片段数组 */
     highlight?: Record<string, string[]>;
 }
@@ -51,6 +55,22 @@ export interface SearchFilters {
     author_id?: string;
     /** 多 tag 取交集（每个 tag 一条 term） */
     tags?: string[];
+}
+
+/**
+ * 兼容历史索引数据：17 号工单前 tags 被投递为逗号串（单个 keyword），
+ * 现为 string[]。读出时统一归一为数组，避免旧文档在前端渲染成 "[object]"。
+ */
+function normalizeTags(raw: unknown): string[] {
+    if (!raw) return [];
+    if (Array.isArray(raw)) return raw.map(String).filter(Boolean);
+    if (typeof raw === 'string') {
+        return raw
+            .split(',')
+            .map((t) => t.trim())
+            .filter(Boolean);
+    }
+    return [];
 }
 
 /** 检索可选参数 */
@@ -227,6 +247,9 @@ export class DocIndexService {
                 word_count: src.word_count ?? 0,
                 publish_time: src.publish_time ?? null,
                 score: hit._score ?? null,
+                // 17 号工单：分类与标签随行返回（_source 已含，仅原先未被拾取）
+                category_id: src.category_id ?? null,
+                tags: [...normalizeTags(src.tags)],
                 ...(hit.highlight && Object.keys(hit.highlight).length
                     ? { highlight: hit.highlight as Record<string, string[]> }
                     : {}),

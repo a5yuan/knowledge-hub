@@ -33,7 +33,11 @@ export interface DocumentIndexPayload {
   title: string;
   summary: string | null;
   content: string;
-  tags: string | null;
+  /**
+   * 标签名数组（17 号工单修正）：ES mapping 中 tags 是 keyword 数组，
+   * 此处必须投递 string[] —— 投逗号串会让 term 过滤永远命中不了（库里存的是 "A,B" 单个 keyword）。
+   */
+  tags: string[] | null;
   authorId: string | null;
   categoryId: string | null;
   teamId: string | null;
