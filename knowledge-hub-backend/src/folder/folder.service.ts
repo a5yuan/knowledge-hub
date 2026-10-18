@@ -8,6 +8,7 @@ import { CreateFolderDto } from './dto/create-folder.dto';
 import { UpdateFolderDto } from './dto/update-folder.dto';
 import { QueryFolderDto } from './dto/query-folder.dto';
 import { normalizeSnowflakeId } from '../common/utils/snowflake-id.util';
+import { OperationService } from '../operation/operation.service';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 /** 目录最大层级（与 18 号工单的部门树约束保持一致） */
@@ -29,6 +30,8 @@ export class FolderService {
         private readonly folderRepo: Repository<KhFolder>,
         @InjectRepository(KhDocument)
         private readonly docRepo: Repository<KhDocument>,
+        // 19 号工单：目录增删审计埋点
+        private readonly operation: OperationService,
     ) {}
 
     /**
@@ -83,6 +86,15 @@ export class FolderService {
             }),
         );
         this.logger.log(`目录创建成功 folderId=${id} zone=${dto.zone} parent=${parentId}`);
+        // 19 号工单：审计埋点
+        await this.operation.record({
+            action: 'folder-create',
+            target_type: 'folder',
+            target_id: id,
+            target_title: dto.folder_name,
+            detail: `创建目录（${dto.zone} 分区）`,
+            actor: user,
+        });
         return this.findByIdOrFail(id);
     }
 
@@ -101,7 +113,7 @@ export class FolderService {
      * 删除目录（软删）：双保护 —— 有子目录或有文档挂载一律拒绝
      * 目录树最典型的坑是「删了父目录，子目录与文档全变孤儿」，这里拒绝而非级联
      */
-    async remove(id: string) {
+    async remove(id: string, user?: AuthUser) {
         const folder = await this.findByIdOrFail(id);
 
         const childCount = await this.folderRepo.count({
@@ -120,6 +132,15 @@ export class FolderService {
 
         await this.folderRepo.update({ id: folder.id }, { deleted: true });
         this.logger.log(`目录已删除（软删）folderId=${folder.id}`);
+        // 19 号工单：审计埋点（名称取自软删前已加载的实体）
+        await this.operation.record({
+            action: 'folder-delete',
+            target_type: 'folder',
+            target_id: folder.id,
+            target_title: folder.folder_name,
+            detail: `删除目录 ${folder.folder_name}`,
+            actor: user,
+        });
         return { id: folder.id, message: '目录已删除' };
     }
 

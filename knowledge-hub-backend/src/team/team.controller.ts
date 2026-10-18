@@ -48,15 +48,19 @@ export class TeamController {
     /** 更新团队（需权限码 team:edit）：部分更新 + status 启停 */
     @RequirePermission('team:edit')
     @Patch(':id')
-    update(@Param('id') id: string, @Body() dto: UpdateTeamDto) {
-        return this.teamService.update(id, dto);
+    update(
+        @Param('id') id: string,
+        @Body() dto: UpdateTeamDto,
+        @CurrentUser() user: AuthUser,
+    ) {
+        return this.teamService.update(id, dto, user);
     }
 
     /** 删除团队（需权限码 team:delete，种子未授权任何角色，仅 Admin 旁路可删） */
     @RequirePermission('team:delete')
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.teamService.remove(id);
+    remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+        return this.teamService.remove(id, user);
     }
 
     /** 添加成员（需权限码 team:member）：重复添加 409 */

@@ -16,6 +16,7 @@ import { FolderModule } from './folder/folder.module';
 import { DocMetaModule } from './doc-meta/doc-meta.module';
 import { DepartmentModule } from './department/department.module';
 import { UserModule } from './user/user.module';
+import { OperationModule } from './operation/operation.module';
 import { RagModule } from './rag/rag.module';
 import { AiModule } from './ai/ai.module';
 import { ObservabilityModule } from './observability/observability.module';
@@ -52,6 +53,8 @@ import { ObservabilityModule } from './observability/observability.module';
     // 18 号工单：用户与部门域
     DepartmentModule,
     UserModule,
+    // 19 号工单：操作日志（审计只读接口，写入由各域显式埋点）
+    OperationModule,
     MqModule,
     EsModule,
     PipelineModule,

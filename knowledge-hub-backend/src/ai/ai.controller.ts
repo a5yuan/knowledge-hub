@@ -6,6 +6,7 @@ import { AiAgentService } from './ai-agent.service';
 import { AiSessionService } from './ai-session.service';
 import { AiChatStreamDto, AiSessionCreateDto } from './dto/ai-chat.dto';
 import { TeamService } from '../team/team.service';
+import { OperationService } from '../operation/operation.service';
 
 /**
  * AI 会话接口（二期工单 08，登录即可访问——接口权限不做，延续现状）：
@@ -20,6 +21,8 @@ export class AiController {
     private readonly sessions: AiSessionService,
     private readonly agent: AiAgentService,
     private readonly teamService: TeamService,
+    // 19 号工单：AI 问答审计埋点
+    private readonly operation: OperationService,
   ) { }
 
   /** 会话列表（updated_at DESC） */
@@ -61,6 +64,12 @@ export class AiController {
     @Res() res: Response,
   ): Promise<void> {
     this.logger.log(`AI 对话开始 user=${user.userId} session=${dto.sessionId ?? 'new'} model=${dto.model ?? 'default'}`);
+    // 19 号工单：审计埋点 —— 只在对话入口埋一次，不进流式循环（每轮 token 不是一次操作）
+    await this.operation.record({
+      action: 'ai-ask',
+      detail: `AI 问答：${dto.content.replace(/\s+/g, ' ').slice(0, 50)}`,
+      actor: user,
+    });
     // 09 号工单：知识库检索工具按当前用户可见性过滤
     const scope = await this.teamService.resolveVisibilityScope(user);
     await this.agent.streamChat(res, user.userId, dto, scope);

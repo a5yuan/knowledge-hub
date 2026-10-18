@@ -450,3 +450,24 @@ INSERT INTO kh_role_permission (id, role_id, permission_id) VALUES
     (4100000000000000081, 2000000000000000003, 4000000000000000082),
     (4100000000000000082, 2000000000000000003, 4000000000000000086)
 ON CONFLICT DO NOTHING;
+
+
+-- ==================== 操作日志（19 号工单） ====================
+
+-- 审计日志：仅追加，永不更新、不软删。
+-- ⚠️ 这是本批工单唯一不带 deleted 的表 —— 审计表若允许软删，等于允许隐藏操作痕迹。
+-- ⚠️ user_name / target_title 是刻意的冗余快照：读取不联表，且目标被删后日志仍可读（审计的基本要求）。
+CREATE TABLE IF NOT EXISTS kh_operation_log (
+    id BIGINT PRIMARY KEY,                          -- 日志 ID（雪花）
+    user_id BIGINT,                                 -- 操作人 → kh_user.id（可空：系统动作）
+    user_name VARCHAR(50),                          -- 操作人显示名（冗余快照，避免联表）
+    action VARCHAR(30) NOT NULL,                    -- 动作类型：upload/update/delete/login/ai-ask/...
+    target_type VARCHAR(30),                        -- 目标类型：document/user/team/folder
+    target_id BIGINT,                               -- 目标 ID
+    target_title VARCHAR(200),                      -- 目标标题（冗余快照，目标删除后日志仍可读）
+    detail VARCHAR(500),                            -- 明细描述
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_kh_operation_log_created_at ON kh_operation_log(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_kh_operation_log_user_id ON kh_operation_log(user_id);
+CREATE INDEX IF NOT EXISTS idx_kh_operation_log_action ON kh_operation_log(action);

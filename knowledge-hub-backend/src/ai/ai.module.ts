@@ -11,6 +11,7 @@ import { RagModule } from '../rag/rag.module';
 import { KgModule } from '../kg/kg.module';
 import { TeamModule } from '../team/team.module';
 import { AuthModule } from '../auth/auth.module';
+import { OperationModule } from '../operation/operation.module';
 
 /**
  * AI 会话模块（二期工单 08/10；12 号：KgModule 导入供 retrieve_graph 工具）：
@@ -23,7 +24,7 @@ import { AuthModule } from '../auth/auth.module';
  * TeamModule 供检索可见性作用域派生（09 号工单）。
  */
 @Module({
-  imports: [TypeOrmModule.forFeature([KhAiSession, KhAiMessage]), RagModule, KgModule, TeamModule, AuthModule],
+  imports: [TypeOrmModule.forFeature([KhAiSession, KhAiMessage]), RagModule, KgModule, TeamModule, AuthModule, OperationModule],
   controllers: [AiController],
   providers: [AiSessionService, AiAgentService, Mem0Service, MemoryCacheService],
 })

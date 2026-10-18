@@ -3,6 +3,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { AuthService } from './auth.service';
 import { UserService } from './user.service';
+import type { OperationService } from '../operation/operation.service';
 import type { KhUser } from './entities/kh-user.entity';
 
 /**
@@ -57,6 +58,8 @@ describe('AuthService 登录与刷新语义', () => {
             userService as unknown as UserService,
             jwt,
             config as unknown as ConfigService,
+            // 19 号工单：登录审计埋点依赖（record 永不抛错）
+            { record: jest.fn().mockResolvedValue(undefined) } as unknown as OperationService,
         );
     });
 

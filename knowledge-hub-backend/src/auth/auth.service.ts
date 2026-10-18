@@ -8,6 +8,7 @@ import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { UserService } from './user.service';
+import { OperationService } from '../operation/operation.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { KhUser } from './entities/kh-user.entity';
@@ -31,6 +32,8 @@ export class AuthService {
     private readonly userService: UserService,
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
+    // 19 号工单：登录审计埋点
+    private readonly operation: OperationService,
   ) { }
 
   /**
@@ -57,7 +60,14 @@ export class AuthService {
     await this.userService.updateLastLogin(user.id);
     this.logger.log(`用户登录成功 userId=${user.id} username=${user.username}`);
 
-    return this.buildTokenPairResult(user, roles);
+    const result = await this.buildTokenPairResult(user, roles);
+    // 19 号工单：审计埋点（仅登录成功路径；失败在抛异常处已返回，不产生日志）
+    await this.operation.record({
+      action: 'login',
+      detail: '登录系统',
+      actor: result.userInfo,
+    });
+    return result;
   }
 
   /**

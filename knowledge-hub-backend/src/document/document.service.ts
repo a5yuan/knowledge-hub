@@ -38,6 +38,7 @@ import { DocIndexService } from '../es/doc-index.service';
 import { isDocVisible, type VisibilityScope } from '../es/visibility-scope';
 import { KgService } from '../kg/kg.service';
 import { TagsService } from '../doc-meta/tags.service';
+import { OperationService } from '../operation/operation.service';
 import { KhUser } from '../auth/entities/kh-user.entity';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
@@ -71,6 +72,8 @@ export class DocumentService {
         private readonly config: ConfigService,
         // 17 号工单：标签归属的唯一真相源在关联表，写侧与读侧都必须经本服务
         private readonly tagsService: TagsService,
+        // 19 号工单：操作日志埋点（显式埋点，不用拦截器）
+        private readonly operation: OperationService,
         // 18 号工单：zone=department 需按「同部门作者」构造 author_id 过滤
         @InjectRepository(KhUser)
         private readonly userRepo: Repository<KhUser>,
@@ -113,6 +116,16 @@ export class DocumentService {
         });
         await this.documentRepo.save(doc);
         this.logger.log(`文件上传完成 docId=${id} filename=${filename} size=${file.size} bytes`);
+
+        // 19 号工单：审计埋点（业务落库之后；record 内部吞错，绝不阻断上传）
+        await this.operation.record({
+            action: 'upload',
+            target_type: 'document',
+            target_id: id,
+            target_title: title,
+            detail: `上传文件 ${filename}`,
+            actor: user,
+        });
 
         // 4. 后台解析，不阻塞请求
         void this.processParse(id, file.buffer, filename);
@@ -177,6 +190,15 @@ export class DocumentService {
         if (tagIds.length > 0) {
             await this.tagsService.replaceDocumentTags(saved.id, tagIds);
         }
+        // 19 号工单：审计埋点（主体 + 标签全部落库成功后）
+        await this.operation.record({
+            action: 'upload',
+            target_type: 'document',
+            target_id: saved.id,
+            target_title: saved.title,
+            detail: '创建在线文档',
+            actor: user,
+        });
         return { ...saved, tag_ids: tagIds };
     }
 
@@ -317,7 +339,7 @@ export class DocumentService {
      * true  → 提审：status=2 + 写审核记录（before_status），需 /approve 通过才发布；
      *         已发布文档重复提审会先清三套索引（离开 Published 即无索引）
      */
-    async publish(id: string) {
+    async publish(id: string, user?: AuthUser) {
         const docId = normalizeSnowflakeId(id, 'id');
         const doc = await this.documentRepo.findOne({
             where: { id: docId, deleted: false },
@@ -338,6 +360,15 @@ export class DocumentService {
             await this.documentRepo.save(doc);
             await this.dispatchPublish(doc);
             await this.dispatchIndex(doc);
+            // 19 号工单：审计埋点
+            await this.operation.record({
+                action: 'publish',
+                target_type: 'document',
+                target_id: doc.id,
+                target_title: doc.title,
+                detail: '发布文档',
+                actor: user,
+            });
             return {
                 id: doc.id,
                 status: doc.status,
@@ -359,6 +390,15 @@ export class DocumentService {
             before_status: beforeStatus,
         });
         this.logger.log(`文档提审 docId=${docId} before_status=${beforeStatus}`);
+        // 19 号工单：提审与直发共用 action=publish，靠 detail 区分（前端 tag 语义仍是「发布」）
+        await this.operation.record({
+            action: 'publish',
+            target_type: 'document',
+            target_id: docId,
+            target_title: doc.title,
+            detail: '提交审核',
+            actor: user,
+        });
         return {
             id: doc.id,
             status: doc.status,
@@ -392,6 +432,16 @@ export class DocumentService {
         await this.documentRepo.save(doc);
         await this.dispatchPublish(doc);
         await this.dispatchIndex(doc);
+        // 19 号工单：审计埋点（审核意见可空，非空时并入明细）
+        const approveComment = dto?.comment?.trim();
+        await this.operation.record({
+            action: 'review-approve',
+            target_type: 'document',
+            target_id: docId,
+            target_title: doc.title,
+            detail: approveComment ? `审核通过：${approveComment}` : '审核通过',
+            actor: user,
+        });
         return {
             id: doc.id,
             status: doc.status,
@@ -423,6 +473,15 @@ export class DocumentService {
         await this.settleReview(docId, 2, user, comment);
         doc.status = STATUS_DRAFT;
         await this.documentRepo.save(doc);
+        // 19 号工单：审计埋点（驳回原因必填，直接进明细）
+        await this.operation.record({
+            action: 'review-reject',
+            target_type: 'document',
+            target_id: docId,
+            target_title: doc.title,
+            detail: `审核驳回：${comment}`,
+            actor: user,
+        });
         return { id: doc.id, status: doc.status, review: 'rejected' };
     }
 
@@ -470,7 +529,7 @@ export class DocumentService {
     }
 
     /** 归档（仅已发布）：status=3 先落库，三套索引异步清理（fire-and-forget）；归档为终态，正文与原文件保留 */
-    async archive(id: string) {
+    async archive(id: string, user?: AuthUser) {
         const docId = normalizeSnowflakeId(id, 'id');
         const doc = await this.documentRepo.findOne({
             where: { id: docId, deleted: false },
@@ -484,6 +543,15 @@ export class DocumentService {
         doc.status = STATUS_ARCHIVED;
         await this.documentRepo.save(doc);
         void this.clearThreeIndexes(docId);
+        // 19 号工单：审计埋点（索引清理是 fire-and-forget，日志不等它）
+        await this.operation.record({
+            action: 'archive',
+            target_type: 'document',
+            target_id: docId,
+            target_title: doc.title,
+            detail: '归档文档',
+            actor: user,
+        });
         return { id: doc.id, status: doc.status };
     }
 
@@ -578,7 +646,7 @@ export class DocumentService {
     }
 
     /** 更新文档元数据（仅更新传入字段）；status 0→1 跳变视为发布并触发投递 */
-    async update(id: string, dto: UpdateDocumentDto) {
+    async update(id: string, dto: UpdateDocumentDto, user?: AuthUser) {
         const docId = normalizeSnowflakeId(id, 'id');
         // 堵绕审口子：审核开启时 PATCH 不可直发
         if (this.reviewEnabled && dto.status === STATUS_PUBLISHED) {
@@ -591,6 +659,8 @@ export class DocumentService {
             throw new NotFoundException(`文档 ${docId} 不存在`);
         }
         const prevStatus = doc.status;
+        // 19 号工单：审计快照必须在 Object.assign 之前取（之后 doc 已被就地改写）
+        const before = snapshotOf(doc);
         // 17 号工单：tag_ids 走关联表；tags 是派生值，剔除避免客户端直写造成串/关联漂移
         const { tag_ids, ...rest } = dto;
         const patch: Partial<UpdateDocumentDto> = { ...rest };
@@ -613,11 +683,23 @@ export class DocumentService {
             void this.dispatchPublish(saved);
             void this.dispatchIndex(saved);
         }
+        // 19 号工单：审计埋点（变更摘要取自 before/after 快照 diff）
+        const changes = describeDocumentChanges(before, snapshotOf(saved));
+        // tag_ids 走关联表，不在快照字段内；传了即视为一次标签变更（不传 = 不改）
+        if (tag_ids !== undefined) changes.push('修改标签');
+        await this.operation.record({
+            action: 'update',
+            target_type: 'document',
+            target_id: saved.id,
+            target_title: saved.title,
+            detail: changes.length > 0 ? changes.join('；') : '更新文档元数据',
+            actor: user,
+        });
         return { ...saved, tag_ids: tagIds };
     }
 
     /** 删除文档：PG 与 Mongo 均逻辑删除（deleted = true），并清理 ES 中 kh_chunk/kh_document 数据 */
-    async remove(id: string) {
+    async remove(id: string, user?: AuthUser) {
         const docId = normalizeSnowflakeId(id, 'id');
         const doc = await this.documentRepo.findOne({
             where: { id: docId, deleted: false },
@@ -625,6 +707,8 @@ export class DocumentService {
         if (!doc) {
             throw new NotFoundException(`文档 ${docId} 不存在`);
         }
+        // 19 号工单：标题必须在删除前取（软删后 findOne 不再命中，日志会退化成裸 ID）
+        const title = doc.title;
         doc.deleted = true;
         await this.documentRepo.save(doc);
         await this.contentModel.updateOne(
@@ -633,6 +717,14 @@ export class DocumentService {
         );
         // 清理三套索引（kh_chunk/kh_document/Neo4j）；失败仅记日志，不阻断删除
         await this.clearThreeIndexes(docId);
+        await this.operation.record({
+            action: 'delete',
+            target_type: 'document',
+            target_id: docId,
+            target_title: title,
+            detail: '删除文档',
+            actor: user,
+        });
         return { success: true };
     }
 
@@ -662,4 +754,59 @@ export class DocumentService {
         }
         return failed;
     }
+}
+
+// ---------- 19 号工单：审计变更摘要（文件级工具，不参与 DI） ----------
+
+/** 参与「变更摘要」的字段快照（view_count 等计数字段不算人工操作，故不纳入） */
+interface DocumentChangeSnapshot {
+    title: string | null;
+    summary: string | null;
+    category_id: string | null;
+    folder_id: string | null;
+    team_id: string | null;
+    is_public: boolean;
+    status: number;
+}
+
+const CHANGE_FIELDS: { field: keyof DocumentChangeSnapshot; label: string }[] = [
+    { field: 'title', label: '标题' },
+    { field: 'summary', label: '摘要' },
+    { field: 'category_id', label: '分类' },
+    { field: 'folder_id', label: '目录' },
+    { field: 'team_id', label: '所属团队' },
+    { field: 'is_public', label: '可见范围' },
+    { field: 'status', label: '状态' },
+];
+
+function snapshotOf(doc: KhDocument): DocumentChangeSnapshot {
+    return {
+        title: doc.title,
+        summary: doc.summary,
+        category_id: doc.category_id,
+        folder_id: doc.folder_id,
+        team_id: doc.team_id,
+        is_public: doc.is_public,
+        status: doc.status,
+    };
+}
+
+/**
+ * before/after 快照 diff → 中文变更片段。
+ * 用 String() 归一后再比：bigint 列经 pg 驱动是字符串、status 是数字，直接 !== 会误判。
+ */
+function describeDocumentChanges(
+    before: DocumentChangeSnapshot,
+    after: DocumentChangeSnapshot,
+): string[] {
+    const parts: string[] = [];
+    for (const { field, label } of CHANGE_FIELDS) {
+        if (String(before[field]) === String(after[field])) continue;
+        if (field === 'is_public') {
+            parts.push(after.is_public ? '可见范围改为全公司' : '可见范围改为仅本团队');
+            continue;
+        }
+        parts.push(`修改${label}`);
+    }
+    return parts;
 }

@@ -31,10 +31,11 @@ const REAL_ROOT: Record<string, string> = {
   // 18 号工单：用户管理（管理端）与部门树
   users: '/user',
   departments: '/department',
+  // 19 号工单：操作日志（复数→单数重写；后端只提供只读 GET /operation）
+  operations: '/operation',
   // 以下资源后端未实现，真实通道不会命中（endpoint 返回 mock 通道）
   stats: '/stats',
   announcements: '/announcements',
-  operations: '/operations',
 }
 
 /** 资源名枚举（与 src/api/ 下模块文件一一对应） */
@@ -60,9 +61,10 @@ const DEFAULT_MODE: Record<ResourceName, 'real' | 'mock'> = {
   // 18 号工单：用户与部门接入真实后端
   users: 'real',
   departments: 'real',
+  // 19 号工单：操作日志接入真实后端
+  operations: 'real',
   stats: 'mock',
   announcements: 'mock',
-  operations: 'mock',
 }
 
 /** 逃生舱：读取 localStorage 单资源覆盖 */

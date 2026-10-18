@@ -36,7 +36,7 @@ export class FolderController {
 
     /** 删除目录（软删）：有子目录或有文档挂载返回 400 */
     @Delete(':id')
-    remove(@Param('id') id: string) {
-        return this.folderService.remove(id);
+    remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+        return this.folderService.remove(id, user);
     }
 }

@@ -17,7 +17,37 @@ export type DocStatus = 0 | 1 | 2 | 3
 /** 文档类型：文件文档 / 在线文档（注意与"文件类型"区分，见 spec §12 术语表） */
 export type DocumentType = 'file' | 'online'
 export type FileType = 'pdf' | 'docx' | 'xlsx' | 'pptx' | 'md' | 'txt'
-export type OperationAction = 'upload' | 'update' | 'delete' | 'login' | 'ai-ask'
+/**
+ * 操作日志动作类型（19 号工单）。
+ *
+ * 与后端 `src/operation/dto/create-operation-log.dto.ts` 的 `OPERATION_ACTIONS` **一一对应**：
+ * 后端是审计写入的唯一来源，前端只负责渲染标签。新增 action 必须两侧同步，
+ * 否则 `ACTION_META` 取不到 → 退化为显示原始英文串（`actionMeta()` 兜底，不白屏）。
+ */
+export type OperationAction =
+  // 文档域
+  | 'upload'
+  | 'update'
+  | 'delete'
+  | 'publish'
+  | 'archive'
+  | 'review-approve'
+  | 'review-reject'
+  // 认证域
+  | 'login'
+  // AI 域
+  | 'ai-ask'
+  // 管理域：用户
+  | 'user-create'
+  | 'user-edit'
+  | 'user-delete'
+  // 管理域：团队
+  | 'team-create'
+  | 'team-edit'
+  | 'team-delete'
+  // 管理域：目录
+  | 'folder-create'
+  | 'folder-delete'
 
 export interface Department {
   id: string

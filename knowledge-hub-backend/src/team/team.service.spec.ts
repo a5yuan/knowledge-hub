@@ -30,6 +30,8 @@ describe('TeamService 团队 CRUD 与成员管理语义', () => {
     let teamRepo: { create: jest.Mock; save: jest.Mock; findAndCount: jest.Mock; findOne: jest.Mock; update: jest.Mock };
     let memberRepo: { create: jest.Mock; save: jest.Mock; find: jest.Mock; findOne: jest.Mock; delete: jest.Mock };
     let userRepo: { find: jest.Mock };
+    // 19 号工单：审计埋点依赖（record 永不抛错，这里只要存在即可）
+    let operation: { record: jest.Mock };
 
     const savedTeam = {
         id: '8000000000000000009',
@@ -60,7 +62,13 @@ describe('TeamService 团队 CRUD 与成员管理语义', () => {
             delete: jest.fn().mockResolvedValue(undefined),
         };
         userRepo = { find: jest.fn().mockResolvedValue([]) };
-        svc = new TeamService(teamRepo as never, memberRepo as never, userRepo as never);
+        operation = { record: jest.fn().mockResolvedValue(undefined) };
+        svc = new TeamService(
+            teamRepo as never,
+            memberRepo as never,
+            userRepo as never,
+            operation as never,
+        );
     });
 
     it('create：leader_id 缺省取当前登录用户（建团人默认负责人）', async () => {

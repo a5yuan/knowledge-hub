@@ -102,8 +102,12 @@ export class DocumentController {
   /** 更新文档元数据（需权限码 document:edit；审核开启时携带 status=1 会 400；关闭时 status 0→1 跳变触发投递） */
   @RequirePermission('document:edit')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateDocumentDto) {
-    return this.documentService.update(id, dto);
+  update(
+    @Param('id') id: string,
+    @Body() dto: UpdateDocumentDto,
+    @CurrentUser() user: AuthUser,
+  ) {
+    return this.documentService.update(id, dto, user);
   }
 
   /**
@@ -112,8 +116,8 @@ export class DocumentController {
    * true  → 提审（status=2 + 审核记录；已发布重复提审会先清三套索引）
    */
   @Post(':id/publish')
-  publish(@Param('id') id: string) {
-    return this.documentService.publish(id);
+  publish(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.documentService.publish(id, user);
   }
 
   /**
@@ -154,14 +158,14 @@ export class DocumentController {
 
   /** 归档（仅已发布）：status=3，三套索引异步清理，正文保留 */
   @Post(':id/archive')
-  archive(@Param('id') id: string) {
-    return this.documentService.archive(id);
+  archive(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.documentService.archive(id, user);
   }
 
   /** 删除文档（逻辑删除，需权限码 document:delete） */
   @RequirePermission('document:delete')
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.documentService.remove(id);
+  remove(@Param('id') id: string, @CurrentUser() user: AuthUser) {
+    return this.documentService.remove(id, user);
   }
 }

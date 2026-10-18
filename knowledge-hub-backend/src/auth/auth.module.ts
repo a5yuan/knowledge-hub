@@ -24,6 +24,7 @@ import { KhPermission } from './entities/kh-permission.entity';
 import { KhRolePermission } from './entities/kh-role-permission.entity';
 import { KhUserPermission } from './entities/kh-user-permission.entity';
 import { KhDepartment } from '../department/entities/kh-department.entity';
+import { OperationModule } from '../operation/operation.module';
 
 /**
  * 用户鉴权模块：
@@ -34,6 +35,8 @@ import { KhDepartment } from '../department/entities/kh-department.entity';
  */
 @Module({
   imports: [
+    // 19 号工单：登录审计埋点（OperationService 只读自身仓库，不会与 AuthModule 成环）
+    OperationModule,
     TypeOrmModule.forFeature([
       KhUser,
       KhRole,

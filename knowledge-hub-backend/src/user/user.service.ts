@@ -20,6 +20,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { QueryUserDto } from './dto/query-user.dto';
 import { toStatusCode } from './dto/user-status';
 import { normalizeSnowflakeId } from '../common/utils/snowflake-id.util';
+import { OperationService } from '../operation/operation.service';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 
 const BCRYPT_COST = 10;
@@ -71,6 +72,8 @@ export class UserAdminService {
     private readonly userRoleRepo: Repository<KhUserRole>,
     @InjectRepository(KhDepartment)
     private readonly deptRepo: Repository<KhDepartment>,
+    // 19 号工单：用户管理审计埋点
+    private readonly operation: OperationService,
   ) {}
 
   /**
@@ -186,12 +189,28 @@ export class UserAdminService {
     this.logger.log(
       `用户创建成功 userId=${id} username=${username} role=${role.role_code} operator=${operator?.userId ?? '-'}`,
     );
+    // 19 号工单：审计埋点（主表 + 角色关联均已落库）
+    await this.operation.record({
+      action: 'user-create',
+      target_type: 'user',
+      target_id: id,
+      target_title: dto.real_name ?? username,
+      detail: `创建用户 ${username}`,
+      actor: operator,
+    });
     return this.viewOf(id);
   }
 
   /** 更新用户（资料 / 邮箱 / 角色 / 部门 / 状态 / 重置密码） */
   async update(id: string, dto: UpdateUserDto, operator?: AuthUser) {
     const target = await this.findByIdOrFail(id);
+    // 19 号工单：变更摘要需在就地改写之前取快照
+    const before = {
+      real_name: target.real_name,
+      email: target.email,
+      department_id: target.department_id != null ? String(target.department_id) : null,
+      status: target.status,
+    };
 
     if (dto.real_name !== undefined) target.real_name = dto.real_name;
     if (dto.email !== undefined) target.email = dto.email ? dto.email.toLowerCase() : null;
@@ -219,6 +238,15 @@ export class UserAdminService {
     this.logger.log(
       `用户更新成功 userId=${target.id} pwdReset=${dto.password !== undefined} operator=${operator?.userId ?? '-'}`,
     );
+    // 19 号工单：审计埋点（角色同步已在上面完成）
+    await this.operation.record({
+      action: 'user-edit',
+      target_type: 'user',
+      target_id: target.id,
+      target_title: target.real_name ?? target.username,
+      detail: describeUserChanges(before, dto),
+      actor: operator,
+    });
     return this.viewOf(target.id);
   }
 
@@ -239,6 +267,15 @@ export class UserAdminService {
       await em.delete(KhUserRole, { user_id: target.id });
     });
     this.logger.log(`用户已删除（软删）userId=${target.id} operator=${operator.userId}`);
+    // 19 号工单：审计埋点放在事务**之外** —— 事务回滚时不该留下「删除成功」的日志
+    await this.operation.record({
+      action: 'user-delete',
+      target_type: 'user',
+      target_id: target.id,
+      target_title: target.real_name ?? target.username,
+      detail: `删除用户 ${target.username}`,
+      actor: operator,
+    });
     return { id: String(target.id), message: '用户已删除' };
   }
 
@@ -398,4 +435,46 @@ export class UserAdminService {
     }
     return user;
   }
+}
+
+// ---------- 19 号工单：审计变更摘要（文件级工具，不参与 DI） ----------
+
+/** 参与「变更摘要」的用户字段快照（在就地改写之前取） */
+interface UserChangeSnapshot {
+  real_name: string | null;
+  email: string | null;
+  department_id: string | null;
+  status: number;
+}
+
+/**
+ * 用户更新 → 中文变更片段。
+ *
+ * 刻意**不记录具体角色码**：前端 `UserRole` 是 admin/member 的有损折叠，
+ * `syncRole` 在折叠值相同时直接跳过（否则「只改部门」会把 ROLE_REVIEWER 一起删掉）。
+ * 这里若写「ROLE_REVIEWER → ROLE_USER」会与实际的折叠语义打架，故只记「调整角色」。
+ */
+function describeUserChanges(
+  before: UserChangeSnapshot,
+  dto: UpdateUserDto,
+): string {
+  const parts: string[] = [];
+  if (dto.real_name !== undefined && dto.real_name !== before.real_name) {
+    parts.push('修改姓名');
+  }
+  if (dto.email !== undefined) {
+    const nextEmail = dto.email ? dto.email.toLowerCase() : null;
+    if (nextEmail !== before.email) parts.push('修改邮箱');
+  }
+  if (dto.department_id !== undefined) {
+    // 空串 = 清空归属（与 resolveDepartmentId 的归一一致）
+    const nextDept = dto.department_id.trim() || null;
+    if (nextDept !== before.department_id) parts.push('调整部门');
+  }
+  if (dto.status !== undefined && dto.status !== before.status) {
+    parts.push(dto.status === 1 ? '启用账号' : '禁用账号');
+  }
+  if (dto.password !== undefined) parts.push('重置密码');
+  if (dto.role !== undefined) parts.push('调整角色');
+  return parts.length > 0 ? parts.join('；') : '更新用户信息';
 }

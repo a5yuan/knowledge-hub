@@ -11,6 +11,7 @@ import { StorageModule } from '../storage/storage.module';
 import { KgModule } from '../kg/kg.module';
 import { TeamModule } from '../team/team.module';
 import { DocMetaModule } from '../doc-meta/doc-meta.module';
+import { OperationModule } from '../operation/operation.module';
 import { KhUser } from '../auth/entities/kh-user.entity';
 
 @Module({
@@ -26,6 +27,8 @@ import { KhUser } from '../auth/entities/kh-user.entity';
     TeamModule,
     // 17 号工单：TagsService（文档标签关联的写侧唯一真相源）
     DocMetaModule,
+    // 19 号工单：操作日志埋点
+    OperationModule,
   ],
   controllers: [DocumentController],
   providers: [DocumentService],

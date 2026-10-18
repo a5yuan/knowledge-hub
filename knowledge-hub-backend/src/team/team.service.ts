@@ -16,6 +16,7 @@ import { UpdateTeamDto } from './dto/update-team.dto';
 import { QueryTeamDto } from './dto/query-team.dto';
 import { AddTeamMemberDto } from './dto/team-member.dto';
 import { normalizeSnowflakeId } from '../common/utils/snowflake-id.util';
+import { OperationService } from '../operation/operation.service';
 import type { AuthUser } from '../auth/interfaces/auth-user.interface';
 import type { VisibilityScope } from '../es/visibility-scope';
 
@@ -44,6 +45,8 @@ export class TeamService {
         private readonly memberRepo: Repository<KhTeamMember>,
         @InjectRepository(KhUser)
         private readonly userRepo: Repository<KhUser>,
+        // 19 号工单：团队增删改审计埋点
+        private readonly operation: OperationService,
     ) {}
 
     /** 创建团队：leader_id 缺省为建团人；负责人/父团队不存在（FK 23503）→ 400 */
@@ -68,6 +71,15 @@ export class TeamService {
             throw err;
         }
         this.logger.log(`团队创建成功 teamId=${id} teamName=${dto.team_name} leader=${dto.leader_id ?? user.userId}`);
+        // 19 号工单：审计埋点
+        await this.operation.record({
+            action: 'team-create',
+            target_type: 'team',
+            target_id: id,
+            target_title: dto.team_name,
+            detail: '创建团队',
+            actor: user,
+        });
         return this.findOne(id);
     }
 
@@ -101,8 +113,10 @@ export class TeamService {
     }
 
     /** 更新团队（部分更新），404 兜底 */
-    async update(id: string, dto: UpdateTeamDto) {
+    async update(id: string, dto: UpdateTeamDto, user?: AuthUser) {
         const team = await this.findOne(id);
+        // 19 号工单：变更摘要需在就地改写之前取快照
+        const before = snapshotOf(team);
         if (dto.team_name !== undefined) team.team_name = dto.team_name;
         if (dto.team_code !== undefined) team.team_code = dto.team_code;
         if (dto.description !== undefined) team.description = dto.description;
@@ -119,14 +133,32 @@ export class TeamService {
             throw err;
         }
         this.logger.log(`团队更新成功 teamId=${team.id}`);
+        // 19 号工单：审计埋点
+        await this.operation.record({
+            action: 'team-edit',
+            target_type: 'team',
+            target_id: team.id,
+            target_title: team.team_name,
+            detail: describeTeamChanges(before, snapshotOf(team)),
+            actor: user,
+        });
         return this.findOne(team.id);
     }
 
     /** 删除团队（软删）：成员关联行不动，查询以 deleted=false 为准 */
-    async remove(id: string) {
+    async remove(id: string, user?: AuthUser) {
         const team = await this.findOne(id);
         await this.teamRepo.update({ id: team.id }, { deleted: true });
         this.logger.log(`团队已删除（软删）teamId=${team.id}`);
+        // 19 号工单：审计埋点（名称取自删除前已加载的实体）
+        await this.operation.record({
+            action: 'team-delete',
+            target_type: 'team',
+            target_id: team.id,
+            target_title: team.team_name,
+            detail: `删除团队 ${team.team_name}`,
+            actor: user,
+        });
         return { id: team.id, message: '团队已删除' };
     }
 
@@ -235,4 +267,56 @@ export class TeamService {
         }
         return member;
     }
+}
+
+// ---------- 19 号工单：审计变更摘要（文件级工具，不参与 DI） ----------
+
+/** 参与「变更摘要」的团队字段快照（在就地改写之前取） */
+interface TeamChangeSnapshot {
+    team_name: string;
+    team_code: string | null;
+    description: string | null;
+    leader_id: string | null;
+    parent_id: string;
+    sort: number;
+    status: number;
+}
+
+const TEAM_CHANGE_FIELDS: { field: keyof TeamChangeSnapshot; label: string }[] = [
+    { field: 'team_name', label: '名称' },
+    { field: 'team_code', label: '编码' },
+    { field: 'description', label: '描述' },
+    { field: 'leader_id', label: '负责人' },
+    { field: 'parent_id', label: '上级团队' },
+    { field: 'sort', label: '排序' },
+    { field: 'status', label: '状态' },
+];
+
+function snapshotOf(team: KhTeam): TeamChangeSnapshot {
+    return {
+        team_name: team.team_name,
+        team_code: team.team_code,
+        description: team.description,
+        leader_id: team.leader_id != null ? String(team.leader_id) : null,
+        parent_id: team.parent_id != null ? String(team.parent_id) : '0',
+        sort: team.sort,
+        status: team.status,
+    };
+}
+
+/** before/after 快照 diff → 中文变更片段（bigint 列经 pg 驱动是字符串，故统一 String 比较） */
+function describeTeamChanges(
+    before: TeamChangeSnapshot,
+    after: TeamChangeSnapshot,
+): string {
+    const parts: string[] = [];
+    for (const { field, label } of TEAM_CHANGE_FIELDS) {
+        if (String(before[field]) === String(after[field])) continue;
+        if (field === 'status') {
+            parts.push(after.status === 1 ? '启用团队' : '停用团队');
+            continue;
+        }
+        parts.push(`修改${label}`);
+    }
+    return parts.length > 0 ? parts.join('；') : '更新团队信息';
 }
