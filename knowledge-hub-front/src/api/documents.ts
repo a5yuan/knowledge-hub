@@ -60,7 +60,8 @@ export async function fetchDocuments(
 
   const page = raw as { items: Record<string, unknown>[]; total: number; page: number; pageSize: number }
   const items = page.items.map((r) => mapDocumentWithOwner(r as never))
-  // 已知偏差规避：后端无法表达「非归档」，mine/public 混入已归档行，前端过滤并记录条数
+  // 20 号工单后：mine/public 已在请求里带 exclude_archived=true，后端不再混入归档行，
+  // 这里保留为兜底（正常恒为 0）——旧后端未升级时仍能挡住脏行，不静默显示归档文档。
   const visible = query.zone === 'mine' || query.zone === 'public' ? items.filter((d) => d.docStatus !== 3) : items
   const removedArchived = items.length - visible.length
 

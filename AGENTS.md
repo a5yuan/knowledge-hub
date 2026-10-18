@@ -9,12 +9,16 @@
 
 | 目录 | 说明 |
 |---|---|
-| `knowledge-hub-backend/` | 后端，**独立 git repo**，`src/` 113 个 ts |
-| `knowledge-hub-front/` | 前端，**独立 git repo**，`src/` 78 个源文件 |
-| `backend-integration/` | 跨仓库联调层（`spec.md` + `issues/01~12`） |
+| `knowledge-hub-backend/` | 后端，`src/` 113 个 ts |
+| `knowledge-hub-front/` | 前端，`src/` 78 个源文件 |
+| `backend-integration/` | 跨仓库联调层（`spec.md` + `issues/`），**已被 `.gitignore` 排除、不入库** |
 | `README.md` | 面向人类的总览 |
 
-⚠️ **根目录是 git 仓库**，只跟踪根层文档（`AGENTS.md` / `README.md` / `backend-integration/`）；`knowledge-hub-backend/` 与 `knowledge-hub-front/` 是**各自独立的嵌套 repo**，根仓库不跟踪其内容 —— 提交前先确认自己在哪个仓库。扫描时排除：`**/node_modules/`（约 9.9 万文件）、`knowledge-hub-backend/volumes/`（916 MB 中间件数据）、`**/dist/` —— 排除项于 2026-09-28 实测。
+⚠️ **单仓库模式**（2026-10-13 实测确认）：**只有根目录 `.git`**，`knowledge-hub-backend/` 与 `knowledge-hub-front/` 直接纳入根仓库 `main` 分支统一管理，**不再有嵌套 repo**。提交时不要 `cd` 进子目录以为在另一个仓库 —— `git rev-parse --show-toplevel` 一律返回根目录。旧子仓库的 `.git` 已移到 `.git-backups/backend.git` / `.git-backups/front.git`（本地保留供回滚，已被 `.gitignore` 排除）。
+
+扫描时排除：`**/node_modules/`（约 9.9 万文件）、`knowledge-hub-backend/volumes/`（916 MB 中间件数据）、`**/dist/`、`**/.run-build/`。
+
+**行尾统一 LF**：`.gitattributes` 声明 `* text=auto eol=lf`，本机设 `core.autocrlf=input`。`*.bat` / `*.cmd` / `*.ps1` 例外保留 CRLF；媒体与 Office 文件标记为 `binary` 不做转换。
 
 ## 1 命令
 
@@ -97,6 +101,12 @@ pnpm build                                   # vue-tsc -b && vite build
 - refresh Token **无服务端吊销**，泄露窗口 = refresh 有效期（默认 7d）
 - 文档 CRUD 未做归属校验；`author_id` / `create_by` 取自请求体而非 Token
 - 无 Swagger / 无健康检查模块 / 无 Dockerfile / 无 CI
+- ⚠️ **时间戳有两套时钟基准并存**，写任何时间边界前必看：
+  - `kh_document.created_at` / `kh_operation_log.created_at` 走 DB `DEFAULT now()`（会话 `Etc/UTC`）→ 列里是 **UTC 字面**
+  - `kh_user.last_login_at` 走应用 `new Date()`（18 号工单）→ 列里是 **本地字面**
+  - 根因：`timestamp without time zone` 丢时区，node-postgres 把 `Date` 参数按**本地字段**序列化成 `...+08:00`，PostgreSQL 对 `timestamp` **静默忽略**该偏移
+  - 处置：按字段基准传字符串，用 `stats.service.ts` 的 `utcLiteral()` / `localLiteral()`，别用 `MoreThanOrEqual(Date)` 赌驱动行为
+  - 相关遗留：`created_at` 出参经 pg 按本地解析后再 `toISOString()`，导致**前端展示早 8 小时**（待单开工单统一时区语义）
 
 **前端**
 
@@ -122,6 +132,8 @@ pnpm build                                   # vue-tsc -b && vite build
 | 目录树域（folder） | `backend-integration/issues/16-folder-domain.md` |
 | 分类与标签域（category / tag） | `backend-integration/issues/17-doc-meta-domain.md` |
 | 用户与部门域（user / department） | `backend-integration/issues/18-user-org-domain.md` |
+| 操作日志域（operation / 审计） | `backend-integration/issues/19-operation-log.md` |
+| 大盘聚合（stats / dashboard） | `backend-integration/issues/20-dashboard-stats.md` |
 
 ### 4.2 `evolving` —— 进行中（了解下一步）
 
@@ -133,8 +145,6 @@ pnpm build                                   # vue-tsc -b && vite build
 | Agentic RAG | `backend-integration/issues/11-agentic-rag.md` |
 | Graph RAG | `backend-integration/issues/12-graph-rag.md` |
 | **Mock 模块建设总纲** | `backend-integration/issues/14-mock-modules-backlog.md`（入口，含依赖图与排序） |
-| 操作日志 | `backend-integration/issues/19-operation-log.md` |
-| 大盘聚合 | `backend-integration/issues/20-dashboard-stats.md` |
 | 公告模块 | `backend-integration/issues/21-announcement-domain.md` |
 | Agent 工具可用性契约 | `backend-integration/issues/22-tool-availability-contract.md` |
 | Agent 工具层抽取 | `backend-integration/issues/23-agent-tool-layer-extraction.md` |
@@ -143,7 +153,7 @@ pnpm build                                   # vue-tsc -b && vite build
 >
 > **Mock 资源建设链**：`14`（总纲）→ `15/16/17/18`（并行）→ `19` → `20` → `21`。这 8 份工单把剩余的 7 个 Mock 资源（folders / users / stats / categories / tags / announcements / operations）+ departments + team 接入真实后端，并**撤销工单 05 的降级清单**。改任一处前先读 `14` 的依赖图与决策记录。
 >
-> **进度**：`15`（团队，纯前端）、`16`（目录树）、`17`（分类与标签）、`18`（用户与部门）已交付并转为 `current`；下一批从 `19` 操作日志起。
+> **进度**：`15`（团队，纯前端）、`16`（目录树）、`17`（分类与标签）、`18`（用户与部门）、`19`（操作日志）、`20`（大盘聚合）已交付并转为 `current`；下一批 `21` 公告模块。
 
 ### 4.3 `historical` —— 设计背景（默认不读，仅在需要理解「当初为什么这么设计」时查）
 

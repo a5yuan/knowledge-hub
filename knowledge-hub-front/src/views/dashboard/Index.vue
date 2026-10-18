@@ -31,7 +31,7 @@ type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
 /**
  * 动作 → 标签（19 号工单）。
  *
- * 覆盖后端 `OPERATION_ACTIONS` 全量（17 种）。用 Record<string, …> 而非
+ * 覆盖后端 `OPERATION_ACTIONS` 全量（18 种）。用 Record<string, …> 而非
  * Record<OperationAction, …>：后者会让「后端新增了 action」变成 TS 报错的静默缺口，
  * 前者配合 `actionMeta()` 兜底，漏配只会显示原始英文串，不会白屏。
  */
@@ -48,6 +48,8 @@ const ACTION_META: Record<string, { label: string; type: TagType }> = {
   login: { label: '登录', type: 'info' },
   // AI 域
   'ai-ask': { label: 'AI 问答', type: 'warning' },
+  // 检索域
+  search: { label: '搜索', type: 'info' },
   // 管理域：用户
   'user-create': { label: '新增用户', type: 'primary' },
   'user-edit': { label: '编辑用户', type: 'primary' },
@@ -171,8 +173,8 @@ onMounted(() => {
 
 <template>
   <div class="page dashboard-page" v-loading="loading">
-    <!-- 19 号工单：操作动态已接真实后端；统计卡数据仍来自 Mock（stats 归 20 号工单），故保留标注 -->
-    <h2 class="page-title">首页大盘<el-tag size="small" type="info" effect="plain" style="margin-left: 8px">演示数据</el-tag></h2>
+    <!-- 19/20 号工单：stats 与 operations 均已接真实后端，「演示数据」标注至此全部解除 -->
+    <h2 class="page-title">首页大盘</h2>
 
     <!-- 统计卡 ×4 -->
     <div class="stat-grid">

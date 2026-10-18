@@ -110,6 +110,8 @@ export class DocumentService {
             title,
             content_id: content._id.toString(),
             status: 0, // 草稿
+            // 20 号工单：文件体积入元数据（个人中心存储占用 / 列表 fileSize 的唯一来源）
+            file_size: String(file.size),
             // 09 号工单：作者缺省取当前登录用户（否则 author_id 为空的文档对上传者本人也不可见）
             author_id: dto?.authorId ?? user?.userId ?? null,
             create_by: dto?.createBy ?? user?.userId ?? null,
@@ -221,6 +223,7 @@ export class DocumentService {
             status,
             is_public,
             zone,
+            exclude_archived,
         } = query;
         const qb = this.documentRepo
             .createQueryBuilder('d')
@@ -231,6 +234,10 @@ export class DocumentService {
         if (team_id !== undefined) qb.andWhere('d.team_id = :team_id', { team_id });
         if (author_id !== undefined) qb.andWhere('d.author_id = :author_id', { author_id });
         if (status !== undefined) qb.andWhere('d.status = :status', { status });
+        // 20 号工单：mine/public 分区需要「不等于归档」，status 精确值表达不了（见 DTO 注释）
+        if (exclude_archived) {
+            qb.andWhere('d.status != :excludeArchived', { excludeArchived: STATUS_ARCHIVED });
+        }
         if (is_public !== undefined) qb.andWhere('d.is_public = :is_public', { is_public });
         if (title !== undefined) qb.andWhere('d.title LIKE :title', { title: `%${title}%` });
         // ⚠️ 17 号工单遗留：这是对「派生串」的模糊匹配（D 方案下串只是历史兼容值）。

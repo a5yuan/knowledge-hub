@@ -471,3 +471,10 @@ CREATE TABLE IF NOT EXISTS kh_operation_log (
 CREATE INDEX IF NOT EXISTS idx_kh_operation_log_created_at ON kh_operation_log(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_kh_operation_log_user_id ON kh_operation_log(user_id);
 CREATE INDEX IF NOT EXISTS idx_kh_operation_log_action ON kh_operation_log(action);
+
+
+-- ==================== 大盘聚合（20 号工单） ====================
+
+-- 文档文件体积（字节）：MyStats.totalSize 与列表 fileSize 的唯一来源。
+-- 存量文档与在线文档为 NULL —— 前端按 undefined / '—' 处理，聚合时 COALESCE 为 0。
+ALTER TABLE kh_document ADD COLUMN IF NOT EXISTS file_size BIGINT;

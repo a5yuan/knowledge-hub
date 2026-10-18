@@ -3,21 +3,17 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { changePassword, updateProfile } from '@/api/auth'
 import { fetchMyStats } from '@/api/stats'
-import { fetchDocuments } from '@/api/documents'
-import { isRealResource } from '@/api/endpoint'
 import { useUserStore } from '@/stores/user'
 import type { MyStats } from '@/types/api'
 
 /**
- * 个人中心（工单 12 / 工单 05 收口）：
+ * 个人中心（工单 12 / 工单 05 收口 / 20 号工单撤销降级）：
  * 昵称可编辑（用户名/部门/角色只读），保存走 PATCH /auth/profile 后同步 store → 顶栏即时更新；
  * 修改密码与资料更新钉在 Mock 通道（后端无对应接口）；
- * 统计：Mock 走 /stats/mine；真实模式后端无 fileSize 来源——隐藏存储占用，
- * 文档数改用真实列表 total（口径=本人未归档文档，与「我的文档」分区一致）。
+ * 统计：20 号工单起真实模式也走 GET /stats/mine（口径=本人未归档文档，与「我的文档」分区一致），
+ * 原先「用列表 total 凑文档数、隐藏存储占用」的补偿逻辑已删除。
  */
 const userStore = useUserStore()
-
-const realMode = computed(() => isRealResource('documents'))
 
 // ---------- 基本资料 ----------
 const displayName = ref('')
@@ -92,11 +88,9 @@ onMounted(async () => {
   }
 })
 
-/** 真实模式：后端无 /stats/mine——文档数取「我的文档」列表 total 并扣除被前端过滤的已归档行；totalSize 无来源（存储占用项隐藏） */
+/** 20 号工单：真实通道也走 GET /stats/mine，不再用列表 total 凑数 */
 async function loadMyStats(): Promise<MyStats> {
-  if (!realMode.value) return fetchMyStats()
-  const page = await fetchDocuments({ zone: 'mine', page: 1, pageSize: 1 }, userStore.user?.id ?? '')
-  return { docCount: page.total - (page.removedArchived ?? 0), totalSize: 0 }
+  return fetchMyStats()
 }
 </script>
 
@@ -135,8 +129,7 @@ async function loadMyStats(): Promise<MyStats> {
               <div class="stat-value">{{ stats?.docCount ?? '—' }}</div>
               <div class="stat-label">文档数</div>
             </div>
-            <!-- 真实模式隐藏：后端文档数据无文件大小来源（spec §4.4 有损映射，工单 05） -->
-            <div v-if="!realMode" class="stat-item">
+            <div class="stat-item">
               <div class="stat-value">{{ stats ? formatSize(stats.totalSize) : '—' }}</div>
               <div class="stat-label">存储占用</div>
             </div>

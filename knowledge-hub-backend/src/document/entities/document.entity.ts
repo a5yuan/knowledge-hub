@@ -84,6 +84,13 @@ export class KhDocument {
   @Column({ type: 'int', default: 0 })
   word_count: number;
 
+  /**
+   * 文件体积（字节）。20 号工单补字段。
+   * 在线文档与「补字段之前上传的存量文档」均为 NULL —— 前端按 `undefined` 处理（显示 `—`）。
+   */
+  @Column({ type: 'bigint', nullable: true })
+  file_size: string | null;
+
   /** 发布时间（草稿状态为 NULL） */
   @Column({ type: 'timestamp', nullable: true })
   publish_time: Date | null;

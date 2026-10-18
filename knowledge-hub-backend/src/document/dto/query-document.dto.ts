@@ -78,6 +78,24 @@ export class QueryDocumentDto {
   @IsBoolean()
   is_public?: boolean;
 
+  /**
+   * 排除已归档（20 号工单验收补齐）。
+   *
+   * 为什么需要它：`status` 只能表达「等于某值」，无法表达「不等于归档」。
+   * 前端 `mine` / `public` 分区历史上只能发 `author_id` / `is_public`，于是已归档行会混进结果，
+   * 后端 `total` 把它们算进去，而 `GET /stats/mine` 的 `docCount` 按工单口径排除归档 ——
+   * 两处数字对不上，用户会以为掉数据。
+   *
+   * 前端在 `toBackendListQuery` 里对 mine/public 恒传 `exclude_archived=true`，
+   * 让 `total` 与展示行数、与 `docCount` 三者一致。
+   */
+  @IsOptional()
+  @Transform(({ value }) =>
+    value === true || value === 'true' ? true : value === false || value === 'false' ? false : value,
+  )
+  @IsBoolean()
+  exclude_archived?: boolean;
+
   /** 页码，从 1 开始 */
   @IsOptional()
   @Type(() => Number)

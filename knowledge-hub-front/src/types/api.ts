@@ -37,6 +37,8 @@ export type OperationAction =
   | 'login'
   // AI 域
   | 'ai-ask'
+  // 检索域（20 号工单补）
+  | 'search'
   // 管理域：用户
   | 'user-create'
   | 'user-edit'

@@ -33,8 +33,9 @@ const REAL_ROOT: Record<string, string> = {
   departments: '/department',
   // 19 号工单：操作日志（复数→单数重写；后端只提供只读 GET /operation）
   operations: '/operation',
-  // 以下资源后端未实现，真实通道不会命中（endpoint 返回 mock 通道）
+  // 20 号工单：大盘聚合（后端 /stats/dashboard、/stats/mine）
   stats: '/stats',
+  // 以下资源后端未实现，真实通道不会命中（endpoint 返回 mock 通道）
   announcements: '/announcements',
 }
 
@@ -63,7 +64,8 @@ const DEFAULT_MODE: Record<ResourceName, 'real' | 'mock'> = {
   departments: 'real',
   // 19 号工单：操作日志接入真实后端
   operations: 'real',
-  stats: 'mock',
+  // 20 号工单：大盘聚合接入真实后端（/stats 前缀本就是复数，无需路径重写）
+  stats: 'real',
   announcements: 'mock',
 }
 

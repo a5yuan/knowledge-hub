@@ -4,7 +4,10 @@
  *
  * 已知有损映射（spec §4.4）：visibility=department 读侧永不产生（kh_document 无 visibility 列，
  * 只能由 is_public 反推 company/private —— 见 backend-todo §2.4b）；列表无 parse_state /
- * fileUrl / fileType / fileSize / ownerName（真实列表不可能项）。
+ * fileUrl / fileType / ownerName（真实列表不可能项）。
+ *
+ * ⚠️ `fileSize` 自 20 号工单起**可读**（`kh_document.file_size` 已补），但存量文档为 NULL
+ * → 归一成 `undefined`，视图层按 `—` 展示。
  */
 import type { DocStatus, DocumentItem, DocumentListQuery, FileType, ParseStatus } from '@/types/api'
 
@@ -24,6 +27,8 @@ export interface BackendDocument {
   tag_ids?: string[]
   status: number
   is_public: boolean
+  /** 文件体积（字节，pg bigint 出参为字符串）；20 号工单补字段，存量文档与在线文档为 NULL */
+  file_size?: string | null
   created_at: string
   updated_at: string
   [key: string]: unknown
@@ -96,6 +101,8 @@ export function mapDocument(raw: BackendDocument): DocumentItem {
     updatedAt: new Date(raw.updated_at).toISOString(),
     archivedAt: raw.status === 3 ? new Date(raw.updated_at).toISOString() : null,
     docStatus: raw.status as DocStatus,
+    // 20 号工单：file_size 为 bigint 字符串（可能为 NULL），归一成 number | undefined
+    fileSize: raw.file_size != null ? Number(raw.file_size) : undefined,
   }
 }
 
@@ -186,9 +193,11 @@ export function mapReviewRecord(raw: BackendReviewRecord): ReviewRecord {
 
 /**
  * zone → 后端 query 翻译（spec §4.2）：zone 是请求概念（看哪个桶），docStatus 是响应概念，二者不互推。
- * mine → author_id=<me>；public → is_public=true；archive → status=3；
+ * mine → author_id=<me> + exclude_archived=true；public → is_public=true + exclude_archived=true；
+ * archive → status=3；
  * department → zone=department（18 号工单：由后端按「作者所属部门 = 当前用户所属部门」解析，
  * 前端**不得**自行拼 department_id —— 那会让用户越权查看其他部门的文档）。
+ * `exclude_archived` 是 20 号工单验收补的（后端原无「不等于归档」的表达能力，导致 total 多算归档行）。
  * 禁止发送 is_public=false（后端 DTO 历史缺陷）。keyword 翻译为 title 模糊匹配；排序后端固定 created_at DESC。
  */
 export function toBackendListQuery(
@@ -202,9 +211,13 @@ export function toBackendListQuery(
   switch (query.zone) {
     case 'mine':
       params.author_id = me
+      // 20 号工单：让后端 total 排除归档，与 stats/mine.docCount 及实际展示行数三者一致。
+      // 不加这个参数时后端无法表达「不等于归档」，total 会多算已归档行。
+      params.exclude_archived = 'true'
       break
     case 'public':
       params.is_public = 'true'
+      params.exclude_archived = 'true'
       break
     case 'archive':
       params.status = 3

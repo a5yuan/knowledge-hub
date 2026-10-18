@@ -1,0 +1,46 @@
+# 行尾统一为 LF（2026-10-18 建立）
+#
+# 背景：本机 core.autocrlf=true 会在检出时把文本文件转成 CRLF，与「仓库统一 LF」的约定冲突。
+# 这里显式声明 eol=lf，让仓库与工作区都保持 LF，不再依赖 git config 的隐式行为。
+#
+# 配套设置（每台机器执行一次）：
+#   git config core.autocrlf input
+#
+# 若工作区已有 CRLF 文件需要就地转换：
+#   git add --renormalize .
+#   git checkout -- .        # 注意：会丢弃未暂存的改动，先提交或用 stash
+* text=auto eol=lf
+
+# 明确声明为 LF 的脚本
+*.sh   text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.sql  text eol=lf
+
+# Windows 脚本保留 CRLF（cmd.exe / PowerShell 对 LF 的兼容性不稳）
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.ps1  text eol=crlf
+
+# 二进制文件不做行尾转换
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary
+*.pdf   binary
+*.zip   binary
+*.gz    binary
+*.7z    binary
+*.xlsx  binary
+*.xls   binary
+*.docx  binary
+*.pptx  binary
+*.woff  binary
+*.woff2 binary
+*.ttf   binary
+*.eot   binary
+*.mp4   binary
+*.mp3   binary
+*.wav   binary
