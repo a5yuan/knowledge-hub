@@ -202,4 +202,16 @@ export const adminHandlers = [
     if (body.enabled !== undefined) announcement.enabled = body.enabled
     return ok(announcement)
   }),
+
+  // 21 号工单：补齐 Mock 的删除端点（原 Mock 只有 GET/POST/PATCH），
+  // 让「kh_api_mode 逃生舱」在删除公告时也能工作
+  http.delete('/api/announcements/:id', async ({ request, params }) => {
+    await withLatency()
+    const guard = requireAdmin(request)
+    if ('response' in guard) return guard.response
+    const index = db.announcements.findIndex((a) => a.id === params.id)
+    if (index < 0) return fail(NOT_FOUND, '公告不存在')
+    db.announcements.splice(index, 1)
+    return ok({ id: params.id, deleted: true })
+  }),
 ]

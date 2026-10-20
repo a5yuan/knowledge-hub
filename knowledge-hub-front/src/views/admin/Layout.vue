@@ -23,6 +23,8 @@ const menuItems: AdminMenuItem[] = [
   { path: '/admin/teams', title: '团队管理', icon: 'UserFilled', permission: 'system:team' },
   // 18 号工单：组织架构（部门树维护）
   { path: '/admin/departments', title: '组织架构', icon: 'OfficeBuilding', permission: 'system:dept' },
+  // 21 号工单：公告管理（权限码 4000000000000000087，21 号工单新建）
+  { path: '/admin/announcements', title: '公告管理', icon: 'Bell', permission: 'system:announcement' },
 ]
 
 const visibleMenuItems = computed(() =>

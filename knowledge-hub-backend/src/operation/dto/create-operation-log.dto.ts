@@ -37,6 +37,10 @@ export const OPERATION_ACTIONS = [
   // 管理域：目录（16 号工单）
   'folder-create',
   'folder-delete',
+  // 管理域：公告（21 号工单）
+  'announcement-create',
+  'announcement-update',
+  'announcement-delete',
 ] as const;
 
 export type OperationAction = (typeof OPERATION_ACTIONS)[number];
@@ -52,6 +56,8 @@ export const OPERATION_TARGET_TYPES = [
   'user',
   'team',
   'folder',
+  // 21 号工单：系统公告
+  'announcement',
 ] as const;
 
 export type OperationTargetType = (typeof OPERATION_TARGET_TYPES)[number];

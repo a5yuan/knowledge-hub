@@ -103,6 +103,13 @@ const router = createRouter({
               component: () => import('@/views/admin/Departments.vue'),
               meta: { title: '组织架构', permission: 'system:dept' },
             },
+            {
+              // 21 号工单：公告管理（写接口挂 announcement:manage）
+              path: 'announcements',
+              name: 'admin-announcements',
+              component: () => import('@/views/admin/Announcements.vue'),
+              meta: { title: '公告管理', permission: 'system:announcement' },
+            },
           ],
         },
       ],

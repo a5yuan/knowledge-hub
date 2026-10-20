@@ -18,6 +18,7 @@ import { DepartmentModule } from './department/department.module';
 import { UserModule } from './user/user.module';
 import { OperationModule } from './operation/operation.module';
 import { StatsModule } from './stats/stats.module';
+import { AnnouncementModule } from './announcement/announcement.module';
 import { RagModule } from './rag/rag.module';
 import { AiModule } from './ai/ai.module';
 import { ObservabilityModule } from './observability/observability.module';
@@ -58,6 +59,8 @@ import { ObservabilityModule } from './observability/observability.module';
     OperationModule,
     // 20 号工单：大盘聚合（跨域只读，无表）
     StatsModule,
+    // 21 号工单：系统公告（CRUD + 审计埋点）
+    AnnouncementModule,
     MqModule,
     EsModule,
     PipelineModule,

@@ -35,8 +35,8 @@ const REAL_ROOT: Record<string, string> = {
   operations: '/operation',
   // 20 号工单：大盘聚合（后端 /stats/dashboard、/stats/mine）
   stats: '/stats',
-  // 以下资源后端未实现，真实通道不会命中（endpoint 返回 mock 通道）
-  announcements: '/announcements',
+  // 21 号工单：系统公告（复数→单数重写）
+  announcements: '/announcement',
 }
 
 /** 资源名枚举（与 src/api/ 下模块文件一一对应） */
@@ -66,7 +66,8 @@ const DEFAULT_MODE: Record<ResourceName, 'real' | 'mock'> = {
   operations: 'real',
   // 20 号工单：大盘聚合接入真实后端（/stats 前缀本就是复数，无需路径重写）
   stats: 'real',
-  announcements: 'mock',
+  // 21 号工单：系统公告接入真实后端
+  announcements: 'real',
 }
 
 /** 逃生舱：读取 localStorage 单资源覆盖 */

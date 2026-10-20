@@ -59,6 +59,9 @@ pnpm build                                   # vue-tsc -b && vite build
 | `team/` | 团队与成员管理 |
 | `department/` | 部门树（`kh_department`，深度 ≤ 3）+ 部门增删改；写接口挂 `org:manage` |
 | `user/` | **管理端**用户 CRUD（列表 / 建 / 改 / 删 / 角色 / 部门归属），类名刻意叫 `UserAdminService` 以免与 `auth/` 下的 `UserService` 混淆 |
+| `operation/` | 操作日志（审计）：只读 `GET /operation`，写入由各域**显式埋点**调用 `record()`，无写接口 |
+| `stats/` | 大盘聚合：`GET /stats/dashboard` + `/stats/mine`，跨域只读、不建表 |
+| `announcement/` | 系统公告 CRUD（21 号工单）：读接口仅登录，写接口挂 `announcement:manage` |
 | `common/` | snowflake-id 工具 |
 
 ⚠️ `rag/ai.controller.ts` 与 `ai/ai.controller.ts` **同名不同模块**，改之前先确认路径。
@@ -85,6 +88,7 @@ pnpm build                                   # vue-tsc -b && vite build
 - 后端 `@RequirePermission` 是**显式标注式**（非全局强制）：未标注即零开销放行；`ROLE_ADMIN` 经 `PermissionsGuard` 旁路通过全部权限码
 - ⚠️ **给非 Admin 角色授按钮码时，其父菜单码不必同授，且往往不该授**：`system:dept` 的父菜单是顶层 `system`，而 `ROLE_USER` 本就没有 `system` —— 单授子菜单码是**死码**。此时按钮码只作「接口级能力码」存在（能调接口、看不到管理页），与 `team:*` 的既有约定一致
 - ⚠️ **权限码 ID 不要跨工单预约**：工单里预先分配的号段必然撞车（18 号预留的 `…0061/0062` 已被 17 号占用）。实施时现查现取
+- ⚠️ **ROLE_ADMIN 的接口旁路 ≠ 菜单可见**：`PermissionsGuard` 对 ROLE_ADMIN 放行全部权限码，但 `PermissionService.getUserPermissions()` 只做「角色权限 ∪ 直赋权限」，**没有 admin 全量旁路**。新加的菜单码不写进 `kh_role_permission`，admin 调得动接口却**看不到菜单**（21 号工单踩过）
 
 ### 前端硬约定
 
@@ -134,6 +138,7 @@ pnpm build                                   # vue-tsc -b && vite build
 | 用户与部门域（user / department） | `backend-integration/issues/18-user-org-domain.md` |
 | 操作日志域（operation / 审计） | `backend-integration/issues/19-operation-log.md` |
 | 大盘聚合（stats / dashboard） | `backend-integration/issues/20-dashboard-stats.md` |
+| 系统公告（announcement） | `backend-integration/issues/21-announcement-domain.md` |
 
 ### 4.2 `evolving` —— 进行中（了解下一步）
 
@@ -145,7 +150,6 @@ pnpm build                                   # vue-tsc -b && vite build
 | Agentic RAG | `backend-integration/issues/11-agentic-rag.md` |
 | Graph RAG | `backend-integration/issues/12-graph-rag.md` |
 | **Mock 模块建设总纲** | `backend-integration/issues/14-mock-modules-backlog.md`（入口，含依赖图与排序） |
-| 公告模块 | `backend-integration/issues/21-announcement-domain.md` |
 | Agent 工具可用性契约 | `backend-integration/issues/22-tool-availability-contract.md` |
 | Agent 工具层抽取 | `backend-integration/issues/23-agent-tool-layer-extraction.md` |
 
@@ -153,7 +157,7 @@ pnpm build                                   # vue-tsc -b && vite build
 >
 > **Mock 资源建设链**：`14`（总纲）→ `15/16/17/18`（并行）→ `19` → `20` → `21`。这 8 份工单把剩余的 7 个 Mock 资源（folders / users / stats / categories / tags / announcements / operations）+ departments + team 接入真实后端，并**撤销工单 05 的降级清单**。改任一处前先读 `14` 的依赖图与决策记录。
 >
-> **进度**：`15`（团队，纯前端）、`16`（目录树）、`17`（分类与标签）、`18`（用户与部门）、`19`（操作日志）、`20`（大盘聚合）已交付并转为 `current`；下一批 `21` 公告模块。
+> **进度**：`15`（团队）、`16`（目录树）、`17`（分类与标签）、`18`（用户与部门）、`19`（操作日志）、`20`（大盘聚合）、`21`（公告）均已交付并转为 `current` —— **Mock 资源建设链（15→21）全部完成**，工单 05 的降级清单已撤销。
 
 ### 4.3 `historical` —— 设计背景（默认不读，仅在需要理解「当初为什么这么设计」时查）
 

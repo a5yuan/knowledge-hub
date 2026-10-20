@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { Document, DocumentAdd, Search, User } from '@element-plus/icons-vue'
 import { fetchDashboardStats } from '@/api/stats'
 import { fetchOperations, type OperationLogView } from '@/api/operations'
-import type { DashboardStats } from '@/types/api'
+import { fetchAnnouncements } from '@/api/announcements'
+import type { Announcement, DashboardStats } from '@/types/api'
 import VChart from '@/components/charts/VChart.vue'
 import type { EChartsCoreOption } from 'echarts/core'
 
@@ -12,13 +13,18 @@ import type { EChartsCoreOption } from 'echarts/core'
  * 首页大盘（工单 09，spec §5.4 / 原型图 1 简化版）：
  * 统计卡 ×4（无 AI 问答卡片）；活跃用户口径=当日登录去重（已决议，mock 于 stats handler 内实现）。
  * 趋势/环形图经 VChart 按需引入 ECharts；操作记录消费 GET /operations（登录即可读）。
+ * 21 号工单：新增「系统公告」卡片，数据来自 GET /announcement?enabled=true（启用且未过期）。
  */
 type Range = 'today' | '7d' | '30d'
 
 const range = ref<Range>('7d')
 const stats = ref<DashboardStats | null>(null)
 const ops = ref<OperationLogView[]>([])
+const announcements = ref<Announcement[]>([])
 const loading = ref(false)
+
+/** 大盘只露前 3 条，更多去管理页（工单 21 的展示位口径） */
+const ANNOUNCEMENT_LIMIT = 3
 
 const RANGE_OPTIONS: { value: Range; label: string }[] = [
   { value: 'today', label: '今日' },
@@ -31,7 +37,7 @@ type TagType = 'primary' | 'success' | 'warning' | 'danger' | 'info'
 /**
  * 动作 → 标签（19 号工单）。
  *
- * 覆盖后端 `OPERATION_ACTIONS` 全量（18 种）。用 Record<string, …> 而非
+ * 覆盖后端 `OPERATION_ACTIONS` 全量（21 种）。用 Record<string, …> 而非
  * Record<OperationAction, …>：后者会让「后端新增了 action」变成 TS 报错的静默缺口，
  * 前者配合 `actionMeta()` 兜底，漏配只会显示原始英文串，不会白屏。
  */
@@ -61,6 +67,10 @@ const ACTION_META: Record<string, { label: string; type: TagType }> = {
   // 管理域：目录
   'folder-create': { label: '新建目录', type: 'primary' },
   'folder-delete': { label: '删除目录', type: 'warning' },
+  // 管理域：公告（21 号工单）
+  'announcement-create': { label: '新建公告', type: 'primary' },
+  'announcement-update': { label: '编辑公告', type: 'primary' },
+  'announcement-delete': { label: '删除公告', type: 'danger' },
 }
 
 /**
@@ -163,9 +173,34 @@ function formatTime(iso: string): string {
   return new Date(iso).toLocaleString('zh-CN', { hour12: false })
 }
 
+/** 公告卡片只显示日期（时间精度对公告没有意义，反而占宽） */
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  const p = (n: number): string => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`
+}
+
+async function loadAnnouncements(): Promise<void> {
+  try {
+    // enabled=true 由后端保证「启用 + 已到发布时间 + 未过期」，前端不再二次过滤
+    const list = await fetchAnnouncements({ enabled: true })
+    announcements.value = list.slice(0, ANNOUNCEMENT_LIMIT)
+  } catch (error) {
+    ElMessage.error(error instanceof Error ? error.message : '公告加载失败')
+  }
+}
+
+/** 点标题看全文（纯文本；富文本渲染不在工单 21 范围） */
+function showAnnouncementDetail(item: Announcement): void {
+  void ElMessageBox.alert(item.content, item.title, {
+    confirmButtonText: '知道了',
+    customClass: 'announcement-detail',
+  })
+}
+
 onMounted(() => {
   loading.value = true
-  void Promise.all([loadStats(), loadOps()]).finally(() => {
+  void Promise.all([loadStats(), loadOps(), loadAnnouncements()]).finally(() => {
     loading.value = false
   })
 })
@@ -223,31 +258,48 @@ onMounted(() => {
       </el-card>
     </div>
 
-    <!-- 近期操作记录 -->
-    <el-card shadow="never" class="ops-card">
-      <template #header>
-        <div class="card-head">
-          <span>近期操作记录</span>
-        </div>
-      </template>
-      <el-table :data="ops" stripe>
-        <el-table-column label="操作时间" width="180">
-          <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
-        </el-table-column>
-        <el-table-column prop="userName" label="用户" width="120" />
-        <el-table-column label="类型" width="100">
-          <template #default="{ row }">
-            <el-tag size="small" :type="actionMeta(row.action).type" effect="light">
-              {{ actionMeta(row.action).label }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="detail" label="内容" min-width="220" show-overflow-tooltip />
-        <el-table-column label="相关文档" min-width="200" show-overflow-tooltip>
-          <template #default="{ row }">{{ row.targetTitle || '—' }}</template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    <!-- 底部：近期操作记录 + 系统公告（21 号工单新增展示位） -->
+    <div class="bottom-grid">
+      <el-card shadow="never" class="ops-card">
+        <template #header>
+          <div class="card-head">
+            <span>近期操作记录</span>
+          </div>
+        </template>
+        <el-table :data="ops" stripe>
+          <el-table-column label="操作时间" width="170">
+            <template #default="{ row }">{{ formatTime(row.createdAt) }}</template>
+          </el-table-column>
+          <el-table-column prop="userName" label="用户" width="100" />
+          <el-table-column label="类型" width="100">
+            <template #default="{ row }">
+              <el-tag size="small" :type="actionMeta(row.action).type" effect="light">
+                {{ actionMeta(row.action).label }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="detail" label="内容" min-width="200" show-overflow-tooltip />
+          <el-table-column label="相关文档" min-width="160" show-overflow-tooltip>
+            <template #default="{ row }">{{ row.targetTitle || '—' }}</template>
+          </el-table-column>
+        </el-table>
+      </el-card>
+
+      <el-card shadow="never" class="notice-card">
+        <template #header>
+          <div class="card-head">
+            <span>系统公告</span>
+          </div>
+        </template>
+        <el-empty v-if="!announcements.length" description="暂无公告" :image-size="60" />
+        <ul v-else class="notice-list">
+          <li v-for="item in announcements" :key="item.id" @click="showAnnouncementDetail(item)">
+            <span class="notice-title" :title="item.title">{{ item.title }}</span>
+            <span class="notice-time">{{ formatDate(item.publishTime ?? item.createdAt) }}</span>
+          </li>
+        </ul>
+      </el-card>
+    </div>
   </div>
 </template>
 
@@ -327,6 +379,58 @@ onMounted(() => {
 }
 
 .ops-card {
+  min-width: 0;
+}
+
+/* 21 号工单：操作记录（宽）与系统公告（窄）并列一行 */
+.bottom-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 16px;
   margin-top: 16px;
+}
+
+.notice-card :deep(.el-card__body) {
+  padding: 8px 20px 12px;
+}
+
+.notice-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notice-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--el-border-color-lighter);
+  cursor: pointer;
+}
+
+.notice-list li:last-child {
+  border-bottom: none;
+}
+
+.notice-list li:hover .notice-title {
+  color: var(--el-color-primary);
+}
+
+.notice-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 14px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+.notice-time {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--el-text-color-secondary);
 }
 </style>

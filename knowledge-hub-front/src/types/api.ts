@@ -50,6 +50,10 @@ export type OperationAction =
   // 管理域：目录
   | 'folder-create'
   | 'folder-delete'
+  // 管理域：公告（21 号工单）
+  | 'announcement-create'
+  | 'announcement-update'
+  | 'announcement-delete'
 
 export interface Department {
   id: string
@@ -164,6 +168,18 @@ export interface Announcement {
   content: string
   enabled: boolean
   createdAt: string
+  /**
+   * 发布时间（21 号工单后端扩展字段，Mock 无）。
+   * 为空表示「未发布」—— 前台的 `?enabled=true` 不会返回这种。
+   */
+  publishTime?: string
+  /**
+   * 过期时间（21 号工单后端扩展字段，空 = 长期有效）。
+   * 注意：过期过滤在**后端**做，前端不要再判一次，否则两处口径会漂移。
+   */
+  expireTime?: string
+  /** 排序（21 号工单后端扩展字段，升序；缺省 0） */
+  sort?: number
 }
 
 // ---------- 请求/响应通用结构 ----------

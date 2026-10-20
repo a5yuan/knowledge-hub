@@ -473,6 +473,53 @@ CREATE INDEX IF NOT EXISTS idx_kh_operation_log_user_id ON kh_operation_log(user
 CREATE INDEX IF NOT EXISTS idx_kh_operation_log_action ON kh_operation_log(action);
 
 
+-- ==================== 系统公告（21 号工单） ====================
+
+-- 公告：publish_time 独立于 created_at（可先创建后发布），expire_time 为空 = 长期有效。
+-- ⚠️ 时间列一律由 DB 侧写入（NOW()），与本库其它 created_at 同为 UTC 字面基准；
+--    应用侧不要用 new Date() 写这些列，否则会混入本地字面（见 stats.service.ts 的两套时钟说明）。
+CREATE TABLE IF NOT EXISTS kh_announcement (
+    id BIGINT PRIMARY KEY,                          -- 公告 ID（雪花）
+    title VARCHAR(200) NOT NULL,                    -- 公告标题
+    content TEXT NOT NULL,                          -- 公告正文（TEXT：正文可能较长）
+    status SMALLINT NOT NULL DEFAULT 1,             -- 0 停用 / 1 启用（前端 enabled 由它映射）
+    publish_time TIMESTAMP,                         -- 发布时间（NULL = 未发布）
+    expire_time TIMESTAMP,                          -- 过期时间（NULL = 长期有效）
+    sort INT NOT NULL DEFAULT 0,                    -- 排序（同级置顶用）
+    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMP NOT NULL DEFAULT NOW(),
+    create_by BIGINT,
+    update_by BIGINT,
+    deleted BOOLEAN NOT NULL DEFAULT false
+);
+CREATE INDEX IF NOT EXISTS idx_kh_announcement_status ON kh_announcement(status) WHERE deleted = false;
+CREATE INDEX IF NOT EXISTS idx_kh_announcement_publish_time ON kh_announcement(publish_time DESC);
+
+-- 种子公告（与 Mock 的 3 条对齐，切换通道后 UI 不空；第 3 条 status=0 用于验证「停用不出现在大盘」）
+INSERT INTO kh_announcement (id, title, content, status, publish_time, sort) VALUES
+    (3000000000000000001, '知识库系统 v2 上线通知', '新版知识库已上线，新增智能搜索与在线文档能力，欢迎体验。', 1, NOW() - INTERVAL '2 day', 1),
+    (3000000000000000002, '信息安全月活动预告',     '本月将开展信息安全培训与钓鱼演练，请各位同事留意通知。', 1, NOW() - INTERVAL '5 day', 2),
+    (3000000000000000003, '旧版文档迁移完成',       '旧版文件服务器文档已全部迁移至知识库，原地址将停用。', 0, NOW() - INTERVAL '15 day', 3)
+ON CONFLICT (id) DO NOTHING;
+
+-- 权限：公告管理（菜单 + 按钮）。⚠️ ID 现查现取，本段实施时的水位是 …0086，不预约号段。
+INSERT INTO kh_permission (id, parent_id, permission_name, permission_code, permission_type, menu_url, icon, sort) VALUES
+    (4000000000000000087, 4000000000000000005, '公告管理', 'system:announcement', 1, '/admin/announcements', 'Bell', 5)
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kh_permission (id, parent_id, permission_name, permission_code, permission_type, sort) VALUES
+    (4000000000000000088, 4000000000000000087, '维护公告', 'announcement:manage', 2, 1)
+ON CONFLICT (id) DO NOTHING;
+
+-- ROLE_ADMIN 显式授权：PermissionsGuard 对 ROLE_ADMIN 有**接口级**旁路，但前端菜单与按钮可见性
+-- 依赖 /auth/permissions 返回的真实授权数据（permission.service 只做角色权限 ∪ 直赋权限，无 admin 旁路）。
+-- 不授这两条，admin 登录后看不到「公告管理」菜单。
+INSERT INTO kh_role_permission (id, role_id, permission_id) VALUES
+    (4100000000000000091, 2000000000000000001, 4000000000000000087),
+    (4100000000000000092, 2000000000000000001, 4000000000000000088)
+ON CONFLICT DO NOTHING;
+
+
 -- ==================== 大盘聚合（20 号工单） ====================
 
 -- 文档文件体积（字节）：MyStats.totalSize 与列表 fileSize 的唯一来源。
