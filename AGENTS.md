@@ -46,7 +46,8 @@ pnpm build                                   # vue-tsc -b && vite build
 |---|---|
 | `auth/` | 双 Token、全局 `JwtAuthGuard`+`RolesGuard`、`@Public`/`@Roles`/`@CurrentUser`、邮箱激活、密码重置、RBAC 权限 |
 | `document/` | 文档主域：CRUD + 上传 + 状态机（0 草稿 / 1 已发布 / 2 待审核 / 3 已归档） |
-| `ai/` | AI 对话 Agent：`ai-agent.service` 循环、会话、`mem0.service` 长期记忆、`memory-cache` 短期记忆 |
+| `ai/` | AI 对话 Agent：`ai-agent.service` 编排循环（意图路由 / 预算 / 门控 / SSE）、会话、`mem0.service` 长期记忆、`memory-cache` 短期记忆 |
+| `ai/tools/` | **Agent 工具实现层**（23 号工单）：4 个工具以 `ToolDeps` 注入依赖，不 import `express`；编排层的 `make*Tool` 只是 `tool()` 契约的薄包装。改工具逻辑改这里，别改 service |
 | `rag/` | 混合检索（BM25 + KNN → RRF → rerank）+ `/ai/chat` SSE |
 | `kg/` | Neo4j 图谱：LLM 抽取、Cypher 构图、`/kg/*` 查询 |
 | `pipeline/` | 切片 / embedding / `rag.queue` + `search.queue` 消费者 |
@@ -139,6 +140,8 @@ pnpm build                                   # vue-tsc -b && vite build
 | 操作日志域（operation / 审计） | `backend-integration/issues/19-operation-log.md` |
 | 大盘聚合（stats / dashboard） | `backend-integration/issues/20-dashboard-stats.md` |
 | 系统公告（announcement） | `backend-integration/issues/21-announcement-domain.md` |
+| Agent 工具可用性契约（门控 + 结构化拒绝） | `backend-integration/issues/22-tool-availability-contract.md` |
+| Agent 工具层抽取（`ai/tools/` 契约） | `backend-integration/issues/23-agent-tool-layer-extraction.md` |
 
 ### 4.2 `evolving` —— 进行中（了解下一步）
 
@@ -150,14 +153,12 @@ pnpm build                                   # vue-tsc -b && vite build
 | Agentic RAG | `backend-integration/issues/11-agentic-rag.md` |
 | Graph RAG | `backend-integration/issues/12-graph-rag.md` |
 | **Mock 模块建设总纲** | `backend-integration/issues/14-mock-modules-backlog.md`（入口，含依赖图与排序） |
-| Agent 工具可用性契约 | `backend-integration/issues/22-tool-availability-contract.md` |
-| Agent 工具层抽取 | `backend-integration/issues/23-agent-tool-layer-extraction.md` |
 
 > **AI 对话演进链**：`06/07` → `09` → `11` → `12`。其中 `11`、`12` 明确声明**不推翻** `08` 的流式协议与 tool-calling 骨架 —— 改 AI 对话链路时，先确认自己站在这条链的哪一环。
 >
 > **Mock 资源建设链**：`14`（总纲）→ `15/16/17/18`（并行）→ `19` → `20` → `21`。这 8 份工单把剩余的 7 个 Mock 资源（folders / users / stats / categories / tags / announcements / operations）+ departments + team 接入真实后端，并**撤销工单 05 的降级清单**。改任一处前先读 `14` 的依赖图与决策记录。
 >
-> **进度**：`15`（团队）、`16`（目录树）、`17`（分类与标签）、`18`（用户与部门）、`19`（操作日志）、`20`（大盘聚合）、`21`（公告）均已交付并转为 `current` —— **Mock 资源建设链（15→21）全部完成**，工单 05 的降级清单已撤销。
+> **进度**：`15`（团队）、`16`（目录树）、`17`（分类与标签）、`18`（用户与部门）、`19`（操作日志）、`20`（大盘聚合）、`21`（公告）均已交付并转为 `current` —— **Mock 资源建设链（15→21）全部完成**，工单 05 的降级清单已撤销。Agent 侧 `23`（工具层抽取）、`22`（工具可用性契约）亦已交付；`22` 的两条编排层断言待「ModelFactory 注入」重构后才能单测。
 
 ### 4.3 `historical` —— 设计背景（默认不读，仅在需要理解「当初为什么这么设计」时查）
 

@@ -20,6 +20,16 @@ import {
   TracingService,
   type ChatTrace,
 } from '../observability/tracing.service';
+// 工单 23：工具实现下沉到 ./tools/，service 只保留 tool() 注册与 deps 装配
+import { retrieveKnowledge } from './tools/retrieve-knowledge';
+import { rewriteQuery } from './tools/rewrite-query';
+import { webSearch } from './tools/web-search';
+import { retrieveGraph } from './tools/retrieve-graph';
+import { createSourceRegistry } from './tools/source-registry';
+import { safeDomain } from './tools/utils';
+import { EXCERPT_LEN } from './tools/constants';
+import type { ToolDeps } from './tools/types';
+import { buildToolDenial, TOOL_BUDGET_LIMITS } from './tool-denial';
 
 /** 引用来源（工具登记时不含 index，finalSources 统一编号） */
 type AiSourceDraft = Omit<AiSource, 'index'>;
@@ -47,18 +57,15 @@ export type AiStreamEvent =
 
 /** Agent 循环硬上限（防死循环兜底；主控为 11/12 号工单预算 4 工具各 1 次） */
 const MAX_ITERATIONS = 5;
-/** 11/12 号工单：单轮工具调用预算（代码强制，不依赖 prompt 遵从）；12 号图谱加入后总预算 4 */
-const MAX_TOOL_CALLS = 4;
-const MAX_REWRITE_CALLS = 1;
-const MAX_WEB_CALLS = 1;
-const MAX_GRAPH_CALLS = 1;
-/** 图谱检索截断（12 号工单：实体/关系上限，防上下文膨胀） */
-const GRAPH_ENTITY_LIMIT = 8;
-const GRAPH_RELATION_LIMIT = 10;
-/** Tavily 请求超时 */
-const TAVILY_TIMEOUT_MS = 8000;
-/** 来源摘要截断长度 */
-const EXCERPT_LEN = 120;
+/**
+ * 11/12 号工单：单轮工具调用预算（代码强制，不依赖 prompt 遵从）。
+ * 数值来源统一在 tool-denial.ts 的 TOOL_BUDGET_LIMITS —— 拒绝载荷里的 budget_remaining
+ * 与这里循环用的上限必须是同一份，否则「还剩几次」会和实际放行逻辑打架。
+ */
+const MAX_TOOL_CALLS = TOOL_BUDGET_LIMITS.total;
+const MAX_REWRITE_CALLS = TOOL_BUDGET_LIMITS.rewrite;
+const MAX_WEB_CALLS = TOOL_BUDGET_LIMITS.web;
+const MAX_GRAPH_CALLS = TOOL_BUDGET_LIMITS.graph;
 
 /** 11 号工单：五类意图（阶段1 意图路由 Planner） */
 type AgentIntent =
@@ -95,8 +102,7 @@ const INTENT_DIRECTIVES: Record<AgentIntent, string> = {
     '【本轮意图】用户个人偏好类。无需调用检索工具，直接结合上下文中的记忆作答。',
   knowledge:
     '【本轮意图】知识库检索。本轮不可联网。已有【知识库检索资料】属预检索结果：足以回答则直接作答；为空或不足时必须调用 retrieve_knowledge，必要时用 rewrite_query 换词重检，仍无果则如实告知用户知识库暂无相关内容。',
-  web:
-    '【本轮意图】联网搜索。本轮**不检索企业知识库**（未挂载 retrieve_knowledge），因此没有任何【知识库检索资料】属于正常现象，严禁据此输出「知识库中未检索到相关信息」这类未经检索的结论。你必须调用 web_search 获取公网信息，并基于返回结果作答；若 web_search 返回 0 条或不可用，再如实告知用户公网信息缺失。',
+  web: '【本轮意图】联网搜索。本轮**不检索企业知识库**，因此没有任何【知识库检索资料】属于正常现象，严禁据此输出「知识库中未检索到相关信息」这类未经检索的结论。你必须调用 web_search 获取公网信息，并基于返回结果作答；若 web_search 返回 0 条或不可用，再如实告知用户公网信息缺失。',
   knowledge_then_web:
     '【本轮意图】先知识库、不足再联网。已有【知识库检索资料】属预检索结果：足以回答则直接作答；缺失或不足时先调用 retrieve_knowledge 补检，仍未覆盖的部分再调用 web_search 联网补充。',
 };
@@ -124,7 +130,7 @@ const SYSTEM_PROMPT = `你是企业智能知识库的 AI 问答助手，可用�
 - 知识库确实没有相关信息时明确告知用户「知识库中未检索到相关信息」，禁止用记忆或制度背景编造
 - 引用 Web 结果时在句末以 (来源: 域名) 标注
 - 工具不可用或无结果时如实告知，不要编造；若问题无需工具（闲聊、个人偏好），直接回答
-- 系统提示中的【本轮意图】段落是给你内部使用的路由指令：禁止在回答里出现「本轮意图」「调用 web_search」「未挂载 retrieve_knowledge」这类元信息、工具名或流程自述，直接输出面向用户的答案正文
+- 系统提示中的【本轮意图】段落是给你内部使用的路由指令：禁止在回答里出现「本轮意图」这类元信息或工具名等流程自述，直接输出面向用户的答案正文
 上下文可能附带【用户长期记忆】【当前会话记忆】【早期对话摘要】【知识库检索资料】【知识图谱实体关系】等参考信息：
 - 检索资料已通过切题评估，可信优先使用并按全局编号标 [n]；资料不足时调 retrieve_knowledge，或用 rewrite_query 改写后再查
 - 图谱实体关系描述实体间的审批、归属、关联等事实，回答此类问题优先引用对应 [n]
@@ -169,7 +175,7 @@ export class AiAgentService {
     private readonly memoryCache: MemoryCacheService,
     private readonly mem0: Mem0Service,
     private readonly tracing: TracingService,
-  ) { }
+  ) {}
 
   /**
    * 流式对话入口（工单 13）：外层包一个 Langfuse trace（agent 类型），
@@ -269,12 +275,12 @@ export class AiAgentService {
       const [kbHit, memHits] = await Promise.all([
         shouldRetrieveKb
           ? this.pipelineKbSearch(
-            res,
-            plan.rewrittenQuery,
-            params.content,
-            sources,
-            scope,
-          )
+              res,
+              plan.rewrittenQuery,
+              params.content,
+              sources,
+              scope,
+            )
           : Promise.resolve({ items: [], text: '' }),
         this.mem0.search(params.content, userId, sessionId),
       ]);
@@ -296,8 +302,8 @@ export class AiAgentService {
         params.content,
         scope,
       );
-      const rewriteTool = this.makeRewriteTool(res);
-      const webTool = this.makeWebTool(sources);
+      const rewriteTool = this.makeRewriteTool(res, sources);
+      const webTool = this.makeWebTool(res, sources);
       const graphTool = this.makeGraphTool(res, sources);
       const allTools = [retrieveTool, rewriteTool, webTool, graphTool];
       const intentToolNames = new Set<string>(this.toolsForIntent(plan.intent));
@@ -318,24 +324,35 @@ export class AiAgentService {
       const messages: Array<
         SystemMessage | HumanMessage | AIMessage | ToolMessage
       > = [
-          new SystemMessage(
-            this.buildSystemContext(memHits, summary, kbHit.text, plan.intent),
-          ),
-          ...history.map((h) =>
-            h.role === 'user'
-              ? new HumanMessage(h.content)
-              : new AIMessage(h.content),
-          ),
-          new HumanMessage(params.content),
-        ];
+        new SystemMessage(
+          this.buildSystemContext(memHits, summary, kbHit.text, plan.intent),
+        ),
+        ...history.map((h) =>
+          h.role === 'user'
+            ? new HumanMessage(h.content)
+            : new AIMessage(h.content),
+        ),
+        new HumanMessage(params.content),
+      ];
 
       let answer = '';
       let textSeq = 0;
       let reasoningSeq = 0;
+      /**
+       * 工单 22：纯拒绝轮的「下一轮强制无工具」开关。
+       *
+       * 工具常驻后，模型可能发出一批**全部被门控拒绝**的调用。那种轮次里模型没产出任何文本，
+       * 拒绝理由刚 push 进 messages 却没人消费 —— 若直接跳出循环，`answer` 为空，
+       * 用户会看到「（本次回答未生成内容）」。所以不 break，而是让下一轮不绑工具：
+       * 模型先读到拒绝理由，再基于已有信息生成答案。
+       */
+      let denyToolsNextRound = false;
 
       for (let step = 1; step <= MAX_ITERATIONS && !aborted; step++) {
         this.emit(res, 'start-step', { step });
-        const runtimeTools = allTools.filter((t) => allowed(t.name));
+        // 工单 22：工具常驻（不再按 allowed() 裁剪），只在纯拒绝轮的下一轮强制空集
+        const runtimeTools = denyToolsNextRound ? [] : allTools;
+        denyToolsNextRound = false;
         const stream = await (
           runtimeTools.length > 0
             ? baseModel.bindTools(runtimeTools)
@@ -420,10 +437,16 @@ export class AiAgentService {
           // 预算/门控拦截（11 号工单：代码强制；仍回 ToolMessage 保证 tool_calls 配对）
           if (!allowed(name)) {
             deniedCount += 1;
+            // 工单 22：拒绝原因结构化 —— 区分「本轮不该用」（intent_gate）与
+            // 「这次用完了」（budget_total / budget_per_tool），两者对模型的启示不同
+            const denial = buildToolDenial(name, intentToolNames, budget);
             messages.push(
               new ToolMessage({
                 tool_call_id: tc.id ?? `call_${name}`,
-                content: `工具 ${name} 本轮不可用（意图门控或预算：最多 ${MAX_TOOL_CALLS} 次工具调用，各类工具每轮 ${MAX_REWRITE_CALLS} 次）。请立即基于已有信息回答。`,
+                content: `工具 ${name} 本轮不可用（${denial.remediation}）。请立即基于已有信息回答。`,
+                // ToolMessage.content 必须是字符串，结构化部分挂 kwargs：
+                // 不进 prompt，供 Langfuse（工单 13）与评测断言读取
+                additional_kwargs: { tool_denial: denial },
               }),
             );
             continue;
@@ -554,9 +577,13 @@ export class AiAgentService {
             );
           }
         }
-        // 本轮工具调用全部被意图门控/预算拦截 → 强制退出循环进入生成
+        // 本轮工具调用全部被意图门控/预算拦截 → 下一轮不绑工具，强制基于已有信息生成
+        // （工单 22：原实现是 break，但那样刚 push 的拒绝 ToolMessage 不会再有模型调用去消费，
+        //   该轮 content 为空时会触发「本次回答未生成内容」兜底）
         const callCount = aiWithTools.tool_calls?.length ?? 0;
-        if (callCount > 0 && deniedCount === callCount) break;
+        if (callCount > 0 && deniedCount === callCount) {
+          denyToolsNextRound = true;
+        }
       }
 
       if (aborted) {
@@ -702,17 +729,17 @@ export class AiAgentService {
         intent,
         rewrittenQuery:
           typeof parsed.rewritten_query === 'string' &&
-            parsed.rewritten_query.trim()
+          parsed.rewritten_query.trim()
             ? parsed.rewritten_query.trim()
             : question,
         suggestedTerms: Array.isArray(parsed.suggested_terms)
           ? parsed.suggested_terms
-            .filter(
-              (s): s is string =>
-                typeof s === 'string' && s.trim().length > 0,
-            )
-            .map((s) => s.trim())
-            .slice(0, 6)
+              .filter(
+                (s): s is string =>
+                  typeof s === 'string' && s.trim().length > 0,
+              )
+              .map((s) => s.trim())
+              .slice(0, 6)
           : [],
         needRetrieve: parsed.needRetrieve !== false,
         isChitchat: parsed.isChitchat === true || intent === 'chitchat',
@@ -797,49 +824,18 @@ grade 取值：
     }
   }
 
-  /** 汇总整体评估态：无资料→none；评估降级→on_topic；全不切题→off_topic；有切题→on_topic；否则 partial */
-  private overallGrade(
-    grades: ChunkGrade[] | null,
-    count: number,
-  ): 'none' | ChunkGrade {
-    if (count === 0) return 'none';
-    if (grades === null) return 'on_topic';
-    if (grades.every((g) => g === 'off_topic')) return 'off_topic';
-    if (grades.some((g) => g === 'on_topic')) return 'on_topic';
-    return 'partial';
-  }
-
-  /** 评估态中文文案（对齐原图四态） */
-  private gradeLabel(grade: 'none' | ChunkGrade): string {
-    switch (grade) {
-      case 'on_topic':
-        return '切题';
-      case 'partial':
-        return '部分相关';
-      case 'off_topic':
-        return '不切题';
-      default:
-        return '无结果';
-    }
-  }
-
   /**
    * 引用登记（11 号工单阶段6）：返回全局编号 [n]，与最终 sources 序号一致；
    * knowledge 按 doc_id 去重、web 按 url 去重，重复登记返回既有编号。
+   *
+   * 工单 23：去重逻辑已下沉到 tools/source-registry.ts，这里只做委托 ——
+   * 前置管线（KB 预检索）仍走本方法，保持调用点不变。
    */
   private registerSource(
     sources: AiSourceDraft[],
     draft: AiSourceDraft,
   ): number {
-    const key = draft.ref ?? draft.url ?? '';
-    if (key) {
-      const idx = sources.findIndex(
-        (s) => s.kind === draft.kind && (s.ref ?? s.url ?? '') === key,
-      );
-      if (idx >= 0) return idx + 1;
-    }
-    sources.push(draft);
-    return sources.length;
+    return createSourceRegistry(sources).register(draft);
   }
 
   /**
@@ -876,7 +872,7 @@ grade 取值：
         if (
           (hasDomainHint || wNums.size > 0) &&
           s.url &&
-          answer.includes(this.safeDomain(s.url))
+          answer.includes(safeDomain(s.url))
         )
           return true;
         return false;
@@ -1070,8 +1066,35 @@ grade 取值：
   }
 
   /**
-   * 阶段2+3 捆绑工具 retrieve_knowledge（11 号工单）：混合检索（仅可见文档）+ 自动切题评估，
-   * 返回评估结论与切题资料（全局 [n] 编号，与 data-sources 序号一致）；09 号工单 scope 过滤保留。
+   * 装配工具依赖（工单 23）。
+   *
+   * 每次请求新建：`sources` 是本次请求的引用池，`res` 绑定本次 SSE 流。
+   * 工具层因此没有请求级状态，可独立单测。
+   */
+  private toolDeps(res: Response, sources: AiSourceDraft[]): ToolDeps {
+    return {
+      rag: this.ragSearch,
+      kg: this.kg,
+      grader: (question, chunks) => this.gradeChunks(question, chunks),
+      sources: createSourceRegistry(sources),
+      events: {
+        status: (stage, text) => this.emit(res, 'data-status', { stage, text }),
+      },
+      logger: this.logger,
+      config: {
+        excerptLen: EXCERPT_LEN,
+        tavilyApiKey: this.config.get<string>('TAVILY_SEARCH'),
+      },
+    };
+  }
+
+  /**
+   * 阶段2+3 捆绑工具 retrieve_knowledge（11 号工单，工单 23 起实现下沉到 tools/）：
+   * 混合检索（仅可见文档）+ 自动切题评估，返回评估结论与切题资料（全局 [n] 编号，
+   * 与 data-sources 序号一致）；09 号工单 scope 过滤保留。
+   *
+   * 本方法只保留 tool() 的模型可见契约（name / description / schema），**一字不改** ——
+   * 契约散进 tools/ 会失去唯一注册表。
    */
   private makeRetrieveTool(
     res: Response,
@@ -1079,98 +1102,10 @@ grade 取值：
     question: string,
     scope?: VisibilityScope,
   ) {
+    const deps = this.toolDeps(res, sources);
     return tool(
-      async ({ query }) => {
-        try {
-          const { items } = await this.ragSearch.search(query, 5, true, scope);
-          if (items.length === 0) {
-            return {
-              summary: '知识库 0 条命中',
-              content: '评估结论：无结果。知识库中未检索到相关内容。',
-              grade: 'none',
-              items: [] as Array<{
-                documentId: string;
-                documentTitle: string;
-                excerpt: string;
-              }>,
-            };
-          }
-          this.emit(res, 'data-status', {
-            stage: 'grade',
-            text: '评估资料...',
-          });
-          const grades = await this.gradeChunks(
-            question,
-            items.map((it) => ({ title: it.doc_title, content: it.content })),
-          );
-          const kept = items.filter(
-            (_, i) => grades === null || grades[i] !== 'off_topic',
-          );
-          const overall = this.overallGrade(grades, items.length);
-          const dropped = items.length - kept.length;
-          this.emit(res, 'data-status', {
-            stage: 'grade',
-            text: `切题评估：${this.gradeLabel(overall)}${dropped > 0 ? ` · 剔除不切题 ${dropped} 条` : ''}`,
-          });
-          if (kept.length === 0) {
-            return {
-              summary: `知识库 ${items.length} 条均不切题`,
-              content: `评估结论：不切题。检索到的 ${items.length} 条资料与问题无关，不能作为依据。请用 rewrite_query 换检索词重试，或基于已有信息回答并向用户说明知识库无相关内容。`,
-              grade: 'off_topic',
-              items: [] as Array<{
-                documentId: string;
-                documentTitle: string;
-                excerpt: string;
-              }>,
-            };
-          }
-          const outItems: Array<{
-            documentId: string;
-            documentTitle: string;
-            excerpt: string;
-            content: string;
-          }> = [];
-          const lines: string[] = [];
-          for (const it of kept) {
-            const n = this.registerSource(sources, {
-              kind: 'knowledge',
-              title: it.doc_title,
-              ref: it.doc_id,
-              excerpt: it.content.slice(0, EXCERPT_LEN),
-              heading: null,
-            });
-            outItems.push({
-              documentId: it.doc_id,
-              documentTitle: it.doc_title,
-              excerpt: it.content.slice(0, EXCERPT_LEN),
-              content: it.content,
-            });
-            lines.push(`[${n}] ${it.doc_title}\n${it.content.slice(0, 500)}`);
-          }
-          const label = this.gradeLabel(overall);
-          return {
-            summary: `知识库命中 ${items.length} 条 · ${label}`,
-            content: `评估结论：${label}（可用 ${kept.length}/${items.length} 条）\n\n${lines.join('\n\n')}`,
-            grade: overall,
-            items: outItems,
-          };
-        } catch (err) {
-          this.logger.warn(
-            `retrieve_knowledge 降级: ${err instanceof Error ? err.message : err}`,
-          );
-          return {
-            summary: '知识库检索暂不可用',
-            content:
-              '知识库检索服务暂时不可用，请基于已有信息回答，并提示用户稍后重试检索。',
-            grade: 'none',
-            items: [] as Array<{
-              documentId: string;
-              documentTitle: string;
-              excerpt: string;
-            }>,
-          };
-        }
-      },
+      (input: { query: string }) =>
+        retrieveKnowledge(input, { question, scope }, deps),
       {
         name: 'retrieve_knowledge',
         description:
@@ -1181,33 +1116,14 @@ grade 取值：
   }
 
   /**
-   * 阶段4 环内改写工具 rewrite_query（11 号工单）：依据不足原因与新检索词换一种问法再查；
-   * 是否改写、用什么词由模型自主决定，全轮最多 1 次（预算在循环中强制）。
+   * 阶段4 环内改写工具 rewrite_query（11 号工单，工单 23 起实现下沉到 tools/）：
+   * 依据不足原因与新检索词换一种问法再查；是否改写、用什么词由模型自主决定，
+   * 全轮最多 1 次（预算在循环中强制）。
    */
-  private makeRewriteTool(res: Response) {
+  private makeRewriteTool(res: Response, sources: AiSourceDraft[]) {
+    const deps = this.toolDeps(res, sources);
     return tool(
-      ({ reason, terms }: { reason: string; terms: string[] }) => {
-        const q = (terms ?? [])
-          .map((t) => String(t).trim())
-          .filter(Boolean)
-          .join(' ');
-        if (!q) {
-          return {
-            summary: '改写无效',
-            content:
-              '改写无效：未提供检索词。请基于原检索词继续，或直接基于已有信息回答。',
-          };
-        }
-        this.emit(res, 'data-status', {
-          stage: 'rewrite',
-          text: `改写查询：${q}`,
-        });
-        return {
-          summary: `已改写：${q}`,
-          content: `已将检索词改写为：${q}（不足原因：${reason || '信息不足'}）。请立刻用该检索词调用 retrieve_knowledge 重新检索。`,
-          query: q,
-        };
-      },
+      (input: { reason: string; terms: string[] }) => rewriteQuery(input, deps),
       {
         name: 'rewrite_query',
         description:
@@ -1222,205 +1138,30 @@ grade 取值：
     );
   }
 
-  /** Web 搜索工具（Tavily，v2：返回 results 含 title/url；未配 key/超时/异常降级） */
-  private makeWebTool(sources: AiSourceDraft[]) {
-    const apiKey = this.config.get<string>('TAVILY_SEARCH');
-    const available = !!apiKey;
-    return tool(
-      async ({ query }) => {
-        if (!available) {
-          return {
-            summary: 'Web 搜索未配置',
-            content:
-              'Web 搜索能力未配置（缺少 TAVILY_SEARCH）。请告知用户当前仅能基于企业知识库回答，如需公网信息请管理员配置搜索服务。',
-            results: [] as Array<{ title: string; url: string }>,
-          };
-        }
-        try {
-          const ctrl = new AbortController();
-          const timer = setTimeout(() => ctrl.abort(), TAVILY_TIMEOUT_MS);
-          const resp = await fetch('https://api.tavily.com/search', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              api_key: apiKey,
-              query,
-              max_results: 5,
-              search_depth: 'basic',
-            }),
-            signal: ctrl.signal,
-          });
-          clearTimeout(timer);
-          if (!resp.ok) throw new Error(`tavily ${resp.status}`);
-          const data = (await resp.json()) as {
-            results?: Array<{ title: string; url: string; content: string }>;
-          };
-          const results = (data.results ?? []).slice(0, 5);
-          if (results.length === 0) {
-            return {
-              summary: 'Web 0 条命中',
-              content: '公网搜索未找到相关结果。',
-              results: [],
-            };
-          }
-          for (const r of results) {
-            const domain = this.safeDomain(r.url);
-            sources.push({
-              kind: 'web',
-              title: `${r.title} — ${domain}`,
-              url: r.url,
-              excerpt: r.content.slice(0, EXCERPT_LEN),
-              heading: null,
-            });
-          }
-          const text = results
-            .map(
-              (r, i) =>
-                `[W${i + 1}] ${r.title} (${this.safeDomain(r.url)})\n${r.content.slice(0, 300)}`,
-            )
-            .join('\n\n');
-          return {
-            summary: `Web 命中 ${results.length} 条`,
-            content: text,
-            results: results.map((r) => ({ title: r.title, url: r.url })),
-          };
-        } catch (err) {
-          this.logger.warn(
-            `web_search 降级: ${err instanceof Error ? err.message : err}`,
-          );
-          return {
-            summary: 'Web 搜索暂不可用',
-            content:
-              '公网搜索服务暂时不可用，请基于已有信息回答，并告知用户 Web 结果缺失。',
-            results: [],
-          };
-        }
-      },
-      {
-        name: 'web_search',
-        description:
-          '搜索公网信息（时效性/外部知识），仅在知识库无法回答时使用',
-        schema: z.object({ query: z.string().describe('搜索关键词') }),
-      },
-    );
+  /** Web 搜索工具（Tavily，v2：返回 results 含 title/url；未配 key/超时/异常降级）—— 工单 23 起实现下沉到 tools/ */
+  private makeWebTool(res: Response, sources: AiSourceDraft[]) {
+    const deps = this.toolDeps(res, sources);
+    return tool((input: { query: string }) => webSearch(input, deps), {
+      name: 'web_search',
+      description: '搜索公网信息（时效性/外部知识），仅在知识库无法回答时使用',
+      schema: z.object({ query: z.string().describe('搜索关键词') }),
+    });
   }
 
   /**
-   * 图谱检索工具 retrieve_graph（12 号工单）：调 kgService.searchGraph 查实体关系子图，
-   * 每条 RELATED_TO 三元组登记一条 kind='graph' 来源（参与全局 [n] 编号），并返回
-   * entities/relations 供循环 emit data-graph；不过 Grader（子串精确命中噪音低，topK 截断直进）；
-   * Neo4j 不可用/查询失败降级为提示文本，流不中断。
+   * 图谱检索工具 retrieve_graph（12 号工单，工单 23 起实现下沉到 tools/）：
+   * 调 kgService.searchGraph 查实体关系子图，每条 RELATED_TO 三元组登记一条 kind='graph' 来源
+   * （参与全局 [n] 编号），并返回 entities/relations 供循环 emit data-graph；
+   * 不过 Grader（子串精确命中噪音低，topK 截断直进）；Neo4j 不可用/查询失败降级为提示文本，流不中断。
    */
   private makeGraphTool(res: Response, sources: AiSourceDraft[]) {
-    return tool(
-      async ({ query }) => {
-        try {
-          const { entities, edges } = await this.kg.searchGraph(
-            query,
-            undefined,
-            GRAPH_ENTITY_LIMIT,
-          );
-          const ents = entities.slice(0, GRAPH_ENTITY_LIMIT).map((e) => ({
-            name: e.name,
-            type: e.type,
-            description: e.description ?? undefined,
-          }));
-          const relations = edges.slice(0, GRAPH_RELATION_LIMIT).map((e) => ({
-            source: e.sourceName,
-            relation: e.relation,
-            target: e.targetName,
-          }));
-          // 补齐关系两端但未命中实体列表的实体（保证前端 mini 力导图节点着色完整）
-          for (const e of edges.slice(0, GRAPH_RELATION_LIMIT)) {
-            if (!ents.some((x) => x.name === e.sourceName)) {
-              ents.push({
-                name: e.sourceName,
-                type: e.sourceType,
-                description: undefined,
-              });
-            }
-            if (!ents.some((x) => x.name === e.targetName)) {
-              ents.push({
-                name: e.targetName,
-                type: e.targetType,
-                description: undefined,
-              });
-            }
-          }
-          if (relations.length === 0) {
-            return {
-              summary: `图谱 0 条命中（实体 ${ents.length}）`,
-              content:
-                '知识图谱中未检索到与该主题相关的实体关系，请改用 retrieve_knowledge 检索文档资料。',
-              entities: ents,
-              relations: [] as Array<{
-                source: string;
-                relation: string;
-                target: string;
-              }>,
-            };
-          }
-          // 每条关系三元组登记一条 graph 来源（ref 去重），与文档 chunk 粒度对齐
-          const lines: string[] = [];
-          for (const r of relations) {
-            const src = ents.find((e) => e.name === r.source);
-            const tgt = ents.find((e) => e.name === r.target);
-            const n = this.registerSource(sources, {
-              kind: 'graph',
-              title: `${r.source} —${r.relation}→ ${r.target}`,
-              ref: `graph:${r.source}->${r.relation}->${r.target}`,
-              excerpt:
-                (src?.description ?? tgt?.description ?? '').slice(
-                  0,
-                  EXCERPT_LEN,
-                ) || undefined,
-              heading: null,
-            });
-            lines.push(
-              `[${n}] 图谱关系：${r.source}（${src?.type ?? 'unknown'}）—${r.relation}→ ${r.target}（${tgt?.type ?? 'unknown'}）`,
-            );
-          }
-          const entText = ents
-            .map(
-              (e) =>
-                `${e.name}（${e.type}${e.description ? `：${e.description}` : ''}）`,
-            )
-            .join('；');
-          return {
-            summary: `图谱命中 实体 ${ents.length} / 关系 ${relations.length}`,
-            content: `知识图谱实体关系（描述实体间审批/归属/关联等事实，可作回答依据并标 [n]）：\n\n${lines.join('\n')}\n\n相关实体：${entText}`,
-            entities: ents,
-            relations,
-          };
-        } catch (err) {
-          this.logger.warn(
-            `retrieve_graph 降级: ${err instanceof Error ? err.message : err}`,
-          );
-          return {
-            summary: '知识图谱暂不可用',
-            content:
-              '知识图谱服务暂时不可用，请仅依据文档资料回答，不要编造实体关系。',
-            entities: [] as Array<{
-              name: string;
-              type: string;
-              description?: string;
-            }>,
-            relations: [] as Array<{
-              source: string;
-              relation: string;
-              target: string;
-            }>,
-            degraded: true,
-          };
-        }
-      },
-      {
-        name: 'retrieve_graph',
-        description:
-          '检索企业知识图谱中的实体关系子图（人/组织/技术/术语等实体及其关联），适合回答「实体之间的关系、谁审批、谁归属哪个流程」类问题；作为文档检索的补充',
-        schema: z.object({ query: z.string().describe('实体名或关系关键词') }),
-      },
-    );
+    const deps = this.toolDeps(res, sources);
+    return tool((input: { query: string }) => retrieveGraph(input, deps), {
+      name: 'retrieve_graph',
+      description:
+        '检索企业知识图谱中的实体关系子图（人/组织/技术/术语等实体及其关联），适合回答「实体之间的关系、谁审批、谁归属哪个流程」类问题；作为文档检索的补充',
+      schema: z.object({ query: z.string().describe('实体名或关系关键词') }),
+    });
   }
 
   /** 基于最终 messages 生成 6 条推荐追问（非流式，失败由调用方兜底固定池） */
@@ -1457,14 +1198,6 @@ grade 取值：
       return args ? (JSON.parse(args) as Record<string, unknown>) : {};
     } catch {
       return { query: args };
-    }
-  }
-
-  private safeDomain(url: string): string {
-    try {
-      return new URL(url).hostname;
-    } catch {
-      return url.slice(0, 40);
     }
   }
 
