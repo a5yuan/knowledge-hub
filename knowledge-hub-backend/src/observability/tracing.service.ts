@@ -26,6 +26,20 @@ const NOOP_TRACE: ChatTrace = {
 const noopUpdate = (): void => { };
 
 /**
+ * 一次调用的 token 用量（工单 24 §s09 成本）。
+ * `estimated=true` 表示不是接口返回的真实用量，而是按字符数估算 ——
+ * DashScope 的 embedding / rerank 接口不返回 token，只能估。两者必须分开标注，不能混算。
+ */
+export interface UsageEntry {
+  /** 环节：plan / grade / answer / memory / suggestions / embedding / rerank */
+  stage: string;
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  estimated: boolean;
+}
+
+/**
  * Langfuse 追踪服务（工单 13）：把一次 AI 对话包成单个 trace（agent 类型），
  * 其下的 LangChain 调用（Agent 循环 / 意图路由 / 切题评估 / 记忆抽取 / suggestions）
  * 由 CallbackHandler 自动嵌套，检索/向量化/重排/记忆等非 LangChain 调用用显式 span 包裹。
@@ -38,12 +52,50 @@ const noopUpdate = (): void => { };
 export class TracingService {
   private readonly logger = new Logger(TracingService.name);
   /** 当前异步上下文的回调（供 buildModel / buildUtilityModel 直接读取，免去逐层传参；ALS 天然并发安全） */
-  private readonly als = new AsyncLocalStorage<{ cbs: CallbackHandler[] }>();
+  private readonly als = new AsyncLocalStorage<{
+    cbs: CallbackHandler[];
+    /** 本轮对话的 token 用量累计；未开启 ENABLE_USAGE_CAPTURE 时为 null（不分配、不收集） */
+    usage: UsageEntry[] | null;
+  }>();
   readonly enabled = isTracingEnabled();
+  /**
+   * 用量采集开关（工单 24 §生产代码改动）：与 Langfuse 追踪**互相独立**。
+   * 关着时：不传 `stream_options`、不收集、不下发 `usage` 事件 —— 链路与改动前逐字节一致。
+   */
+  readonly usageEnabled = process.env.ENABLE_USAGE_CAPTURE === 'true';
 
   /** 当前上下文中的 LangChain 回调；未启用时为空数组 */
   current(): CallbackHandler[] {
     return this.als.getStore()?.cbs ?? [];
+  }
+
+  /**
+   * 记录一次调用的 token 用量。
+   * 未开启采集、或当前异步上下文不在一次对话里（例如 pipeline 后台切片调 embedding）→ 静默丢弃。
+   */
+  recordUsage(
+    stage: string,
+    u: { model?: string; input?: number; output?: number; estimated?: boolean },
+  ): void {
+    if (!this.usageEnabled) return;
+    const store = this.als.getStore();
+    if (!store?.usage) return;
+    try {
+      store.usage.push({
+        stage,
+        model: u.model ?? '',
+        input_tokens: Math.max(0, Math.round(u.input ?? 0)),
+        output_tokens: Math.max(0, Math.round(u.output ?? 0)),
+        estimated: u.estimated === true,
+      });
+    } catch {
+      /* 采集失败绝不影响业务 */
+    }
+  }
+
+  /** 本轮对话累计用量（未开启采集时为空数组） */
+  usageSnapshot(): UsageEntry[] {
+    return this.als.getStore()?.usage ?? [];
   }
 
   /**
@@ -54,9 +106,13 @@ export class TracingService {
     opts: { userId: string; question: string; tags?: string[] },
     fn: (trace: ChatTrace) => Promise<T>,
   ): Promise<T> {
-    if (!this.enabled) return fn(NOOP_TRACE);
-
-    const holder = { cbs: [] as CallbackHandler[] };
+    // holder 必须在 tracing 开关判断**之前**建好：用量采集不依赖 Langfuse，
+    // LANGFUSE_ENABLED=false 时也要能用 ALS 承载本轮 usage 累计（工单 24 §s09）
+    const holder = {
+      cbs: [] as CallbackHandler[],
+      usage: this.usageEnabled ? ([] as UsageEntry[]) : null,
+    };
+    if (!this.enabled) return this.als.run(holder, () => fn(NOOP_TRACE));
     let handler: CallbackHandler | undefined;
     // trace 级属性（user/session）在 Langfuse v4 中取自「根观察」，故直接写在根 span 上；
     // 用 OTel 属性而非 propagateAttributes，是为了支持 sessionId 在会话创建后才确定（可后置写入）

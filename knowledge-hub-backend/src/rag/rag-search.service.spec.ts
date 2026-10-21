@@ -272,7 +272,11 @@ describe('RerankService（dashscope 重排）', () => {
 
   beforeEach(() => {
     fetchSpy = jest.spyOn(global, 'fetch');
-    service = new RerankService(config as never);
+    // 工单 24 §s09：rerank 会调 tracing.recordUsage，这里给个空壳（采集关闭时它本就什么都不做）
+    service = new RerankService(config as never, {
+      usageEnabled: false,
+      recordUsage: () => undefined,
+    } as never);
   });
 
   afterEach(() => {

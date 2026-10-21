@@ -52,6 +52,8 @@ export type AiStreamEvent =
   | 'text-delta'
   | 'text-end'
   | 'data-sources'
+  /** 工单 24 §s09：token 用量账单（仅 ENABLE_USAGE_CAPTURE=true 时下发；关闭时事件序列与改动前一致） */
+  | 'usage'
   | 'finish'
   | 'error';
 
@@ -321,6 +323,7 @@ export class AiAgentService {
 
       // 6. 手写 tool-calling 循环（v2 事件）；每轮按意图门控 + 剩余预算动态绑定工具（11 号工单）
       const baseModel = this.buildModel(params);
+      const chatModelName = this.resolveChatModelName(params);
       const messages: Array<
         SystemMessage | HumanMessage | AIMessage | ToolMessage
       > = [
@@ -361,6 +364,10 @@ export class AiAgentService {
         let content = '';
         let textOpened = false;
         let reasoningOpened = false;
+        /** 本步的 usage（OpenAI 流式协议把它放在最后一帧，choices 为空的那个 chunk） */
+        let stepUsage:
+          | { input_tokens?: number; output_tokens?: number }
+          | undefined;
         const toolCalls = new Map<
           number,
           { id: string; name: string; args: string }
@@ -368,6 +375,15 @@ export class AiAgentService {
 
         for await (const chunk of stream) {
           if (aborted) break;
+          // 工单 24 §s09：usage 帧只在最后一帧出现且 content 为空，不能靠 content 判断
+          if (this.tracing.usageEnabled) {
+            const um = (
+              chunk as {
+                usage_metadata?: { input_tokens?: number; output_tokens?: number };
+              }
+            ).usage_metadata;
+            if (um) stepUsage = um;
+          }
           // reasoning 思考流（qwen thinking：reasoning_content 在 additional_kwargs 或顶层）
           const reasoning = this.extractReasoning(chunk);
           if (reasoning) {
@@ -409,6 +425,14 @@ export class AiAgentService {
           this.emit(res, 'reasoning-end', { id: `reasoning_${reasoningSeq}` });
         if (textOpened) this.emit(res, 'text-end', { id: `text_${textSeq}` });
         answer += content;
+        // 每步单独记一条：Agent 循环一轮里有工具调用时会产生多步，合并会丢掉「多轮检索贵在哪」
+        if (stepUsage) {
+          this.tracing.recordUsage('answer', {
+            model: chatModelName,
+            input: stepUsage.input_tokens,
+            output: stepUsage.output_tokens,
+          });
+        }
 
         // 无工具调用 → 最终回答，结束循环
         if (toolCalls.size === 0) {
@@ -600,6 +624,12 @@ export class AiAgentService {
       const suggestions = await this.generateSuggestions(messages).catch(
         () => FALLBACK_SUGGESTIONS,
       );
+      // 工单 24 §s09：把本轮各环节 token 用量下发给客户端汇总。
+      // 只在采集开关打开时下发 —— 关闭时事件序列与改动前逐字节一致（验收标准 #7）。
+      // 注意：Mem0 事实抽取是 `void ingestMem0()` 在响应结束后异步跑的，不在这份账单里。
+      if (this.tracing.usageEnabled) {
+        this.emit(res, 'usage', { entries: this.tracing.usageSnapshot() });
+      }
       // 工单 13：附带 traceId（tracing 未启用时为 undefined，JSON 序列化时自动省略），供评测/前端关联
       this.emit(res, 'finish', {
         messageId,
@@ -657,15 +687,42 @@ export class AiAgentService {
       configuration: { baseURL: this.config.get<string>('EMBEDDING_BASE_URL') },
       // 工单 13：构造器级回调，本轮所有模型调用（含多步 Agent 循环）自动进同一 trace
       callbacks: this.tracing.current(),
+      // 工单 24 §s09：显式要求最后一帧带 usage。@langchain/openai 的 streamUsage 默认已开，
+      // 这里写出来是为了「不依赖默认值」—— 只在开关打开时传，关闭时请求体与改动前逐字节一致。
+      ...(this.tracing.usageEnabled
+        ? { streamOptions: { include_usage: true } }
+        : {}),
     };
-    const modelName = thinking
-      ? 'qwen-plus-latest'
-      : (params.model ?? this.config.get<string>('LLM_MODEL', 'qwen-plus'));
+    const modelName = this.resolveChatModelName(params);
     // dashscope compatible-mode：thinking 经 modelKwargs 合入请求体顶层 enable_thinking（LangChain 无 extraBody 字段；thinking 模式下 temperature 不生效，不传）
     const ctorArgs = thinking
       ? { ...base, modelName, modelKwargs: { enable_thinking: true } }
       : { ...base, modelName };
     return new ChatOpenAI(ctorArgs as never);
+  }
+
+  /** 主模型名（buildModel 与用量上报共用一处，避免两处漂移） */
+  private resolveChatModelName(params: AiChatStreamParams): string {
+    return params.enableThinking === true
+      ? 'qwen-plus-latest'
+      : (params.model ?? this.config.get<string>('LLM_MODEL', 'qwen-plus'));
+  }
+
+  /**
+   * 从一次非流式 `invoke()` 的返回值里取 token 用量并上报（工单 24 §s09）。
+   * 取不到 usage 就静默跳过，不影响业务。
+   */
+  private recordInvokeUsage(stage: string, resp: unknown, model: string): void {
+    if (!this.tracing.usageEnabled) return;
+    const um = (
+      resp as { usage_metadata?: { input_tokens?: number; output_tokens?: number } }
+    )?.usage_metadata;
+    if (!um) return;
+    this.tracing.recordUsage(stage, {
+      model,
+      input: um.input_tokens,
+      output: um.output_tokens,
+    });
   }
 
   /**
@@ -711,6 +768,7 @@ export class AiAgentService {
 - 其余：needRetrieve=true。只输出 JSON，不要输出其他内容`),
         new HumanMessage(`最近对话：\n${recent}\n\n当前问题：${question}`),
       ]);
+      this.recordInvokeUsage('plan', resp, this.utilityModelName());
       const raw = typeof resp.content === 'string' ? resp.content : '';
       const match = raw.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('意图路由解析失败');
@@ -795,6 +853,7 @@ grade 取值：
 对每条资料的 index 都输出一个 grade。只输出 JSON，不要输出其他内容。`),
         new HumanMessage(`问题：${question}\n\n资料：\n${list}`),
       ]);
+      this.recordInvokeUsage('grade', resp, this.utilityModelName());
       const raw = typeof resp.content === 'string' ? resp.content : '';
       const match = raw.match(/\{[\s\S]*\}/);
       if (!match) throw new Error('切题评估解析失败');
@@ -1007,6 +1066,8 @@ grade 取值：
 - text 必须是简体中文短句（抽取的事实，不是聊天原文）`),
         new HumanMessage(`用户：${question}\n助手：${answer.slice(0, 1000)}`),
       ]);
+      // 记忆抽取在响应结束后异步跑，不计入下发给客户端的 usage 事件，但服务端可见
+      this.recordInvokeUsage('memory', resp, this.utilityModelName());
       const raw = typeof resp.content === 'string' ? resp.content : '';
       const match = raw.match(/\{[\s\S]*\}/);
       if (!match) return;
@@ -1035,11 +1096,16 @@ grade 取值：
     }
   }
 
+  /** 轻量模型名（工单 24 §s09：用量上报也要带同一个名字，避免与构建处漂移） */
+  private utilityModelName(): string {
+    return this.config.get<string>('MEMORY_LLM_MODEL', 'qwen-turbo');
+  }
+
   /** 轻量工具模型（改写判断/摘要/记忆抽取共用）：MEMORY_LLM_MODEL 默认 qwen-turbo，快速失败 */
   private buildUtilityModel(maxTokens: number, timeoutMs: number): ChatOpenAI {
     return new ChatOpenAI({
       openAIApiKey: this.config.get<string>('OPENAI_API_KEY'),
-      modelName: this.config.get<string>('MEMORY_LLM_MODEL', 'qwen-turbo'),
+      modelName: this.utilityModelName(),
       temperature: 0.1,
       maxTokens,
       maxRetries: 0,
@@ -1184,6 +1250,11 @@ grade 取值：
       ...messages.slice(-4),
       new HumanMessage('请生成 6 条推荐追问。'),
     ]);
+    this.recordInvokeUsage(
+      'suggestions',
+      resp,
+      this.config.get<string>('LLM_MODEL', 'qwen-plus'),
+    );
     const raw = typeof resp.content === 'string' ? resp.content : '';
     const match = raw.match(/\[[\s\S]*\]/);
     if (!match) throw new Error('suggestions 解析失败');
