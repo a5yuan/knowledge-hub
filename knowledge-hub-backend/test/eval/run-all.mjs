@@ -80,10 +80,19 @@ async function main() {
   console.log('='.repeat(70));
   console.log(`输出目录：${suiteDir}\n`);
 
-  // 全局体检：任一不通过就不跑分项，避免产出一份「数字看着正常但环境已降级」的报告
+  /**
+   * 全局体检：任一不通过就不跑分项，避免产出一份「数字看着正常但环境已降级」的报告。
+   *
+   * 但 `--reuse` 模式例外（2026-10-22 踩过）：它一个分项都不执行，只是复用已有 JSON 重出汇总。
+   * 此时若还按体检拦下来，会把**已经跑好的结果**全部标成「未跑」并覆盖 index.md ——
+   * 体检失败反而毁掉报告，方向完全反了。所以 reuse 下降级为警告。
+   */
   const token = await login();
   const issues = await preflight(token);
-  if (issues.length) {
+  if (issues.length && argv.includes('--reuse')) {
+    console.log('⚠️ 环境体检未通过，但 --reuse 只复用已有结果、不请求后端，继续生成汇总：');
+    for (const i of issues) console.log('   - ' + i);
+  } else if (issues.length) {
     console.log('❌ 环境体检未通过，中止：');
     for (const i of issues) console.log('   - ' + i);
     const endedAt = new Date();

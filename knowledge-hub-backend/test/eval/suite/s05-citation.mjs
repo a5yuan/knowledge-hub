@@ -24,6 +24,7 @@
 import 'dotenv/config';
 import { login, sseStream, summarizeTurn, EVAL_TEMPERATURE } from '../lib/base.mjs';
 import { resolveSuiteDir, writeItemJson, writeItemLog } from '../lib/report.mjs';
+import { judgeSupport } from '../lib/judge.mjs';
 
 /**
  * judge 自己用的模型必须显式指定，**不能复用 `MEMORY_LLM_MODEL`**。
@@ -40,13 +41,42 @@ const MAX_PER_TURN = Number(process.env.S05_MAX_PER_TURN ?? 3);
 const SUPPORT_TARGET = 0.9;
 
 /** 会产生引用的知识库问题（闲聊/联网问题的引用口径不同，不混进来） */
+/**
+ * 用例集（2026-10-22 从 6 条扩到 20 条）。
+ *
+ * 为什么扩：6 条只产出 5 处引用、去重后只有 **3 个不同断言**，
+ * 支撑性 100%（3/3）的置信区间是 [44%, 100%] —— 没有统计意义。
+ * 扩样本不是为了"数字好看"，是为了让分母真正能支撑一个结论。
+ *
+ * 按现有 4 篇演示文档（考勤餐补 / 数据安全 / 项目立项 / 新员工指南）逐篇出题，
+ * 保证每条至少在一个 chunk 里有据可查；其中保留 2 条**故意无答案**的，
+ * 用来观察「库里没有时会不会老实说没有」。
+ */
 const CASES = [
+  // 考勤与加班餐补制度
   '加班餐补一个月最多能领多少？',
+  '加班到几点可以申请餐补？',
+  '加班申请要提前在哪里提交？',
+  '工作日加班工资怎么算？',
+  '周末加班是给调休还是给加班费？',
+  '考勤打卡漏打了怎么补？',
+  // 数据安全与权限管理规范
+  '公司的信息安全保密要求有哪些？',
+  '文档密级怎么划分？',
+  '内部文档可以外发吗，需要谁审批？',
+  '数据导出需要授权吗？',
+  '密码有什么强度要求？',
+  // 项目立项与审批流程
+  '项目立项要走哪些审批节点？',
+  '立项需要提交哪些材料？',
+  '项目立项的审批人是谁？',
+  // 研发中心新员工入职指南
+  '试用期有多长，转正需要什么条件？',
+  '导师期是多久，导师期做什么？',
+  '中期评估在什么时候做？',
+  // 故意无答案（观察「库里没有」时是否老实说没有、是否还会编引用）
   '年假没休完可以顺延到明年吗？',
   '出差住宿标准是多少，超标了怎么报销？',
-  '请假需要提前几天申请，审批流程是什么？',
-  '公司的信息安全保密要求有哪些？',
-  '试用期有多长，转正需要什么条件？',
 ];
 
 /** 从答案里抽出所有引用标记：数字 [n] 与 web 局部 [Wn] */
@@ -72,56 +102,6 @@ function sentencesWithMarkers(answer) {
     .filter((s) => s.length > 0 && /\[(?:\d{1,3}|W\d{1,2})\]/i.test(s));
 }
 
-/** 一次非流式 judge 调用（DashScope compatible-mode） */
-async function judge(question, sentence, excerpt) {
-  const res = await fetch(`${JUDGE_BASE}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${JUDGE_KEY}`,
-    },
-    body: JSON.stringify({
-      model: JUDGE_MODEL,
-      temperature: 0,
-      messages: [
-        {
-          role: 'system',
-          content:
-            '你是引用支撑性判定器。给定「问题」「回答中的一句话」「被引用的原文片段」，' +
-            '只判断原文片段是否支持这句话。只输出 JSON：{"verdict":"supported|partial|unsupported","reason":"20字内"}。\n' +
-            '- supported：原文能直接推出这句话\n' +
-            '- partial：原文只支持一部分，或需要额外推断\n' +
-            '- unsupported：原文与该句无关，或说的不是同一件事\n' +
-            '不要因为「原文有相关信息但不够完整」就判 supported。只输出 JSON。',
-        },
-        {
-          role: 'user',
-          content: `问题：${question}\n\n句子：${sentence.slice(0, 300)}\n\n原文片段：${excerpt.slice(0, 500)}`,
-        },
-      ],
-    }),
-  });
-  if (!res.ok) {
-    const body = await res.text().catch(() => '');
-    throw new Error(`judge HTTP ${res.status}: ${body.slice(0, 200)}`);
-  }
-  const data = await res.json();
-  const raw = data?.choices?.[0]?.message?.content ?? '';
-  const m = String(raw).match(/\{[\s\S]*\}/);
-  if (!m) return { verdict: 'unknown', reason: 'judge 输出无法解析' };
-  try {
-    const j = JSON.parse(m[0]);
-    return {
-      verdict: ['supported', 'partial', 'unsupported'].includes(j.verdict)
-        ? j.verdict
-        : 'unknown',
-      reason: typeof j.reason === 'string' ? j.reason : '',
-    };
-  } catch {
-    return { verdict: 'unknown', reason: 'judge JSON 解析失败' };
-  }
-}
-
 async function main() {
   const suiteDir = resolveSuiteDir();
 
@@ -137,7 +117,9 @@ async function main() {
   const token = await login();
 
   const turns = [];
-  const citations = []; // 逐条引用记录（有效性 + 支撑性）
+  const citations = [];
+  /** 跨轮去重：同一断言只判一次（见 judge 循环里的 dedupeKey 注释） */
+  const seenClaims = new Set();
   const logLines = [];
 
   for (const [i, q] of CASES.entries()) {
@@ -215,7 +197,15 @@ async function main() {
       invalid,
     });
 
-    // 支撑性：同一轮里最多抽 MAX_PER_TURN 条（控制 judge 开销，抽样口径写进结论）
+    /**
+     * 支撑性：同一轮最多抽 MAX_PER_TURN 条，且**跨轮去重**。
+     *
+     * 为什么必须去重（2026-10-22 实测）：某轮 10 条抽检里有 6 条是同一句
+     * 「当前【知识库检索资料】仅包含《考勤与加班餐补制度》」，
+     * 3 条是「根据…《数据安全与权限管理规范》」—— 10 条实际只有 **3 个不同断言**。
+     * 于是「支撑性 90%」的分母看着是 10，有效信息量只有 3：换一个断言就 ±10%，
+     * 数字的抖动幅度被这一件事放大了三倍。
+     */
     const judged = [];
     for (const row of rows.filter((x) => x.valid)) {
       if (judged.length >= MAX_PER_TURN) break;
@@ -223,6 +213,13 @@ async function main() {
         line.includes(row.marker),
       );
       if (!sentence) continue;
+      const dedupeKey = `${sentence.replace(/\s+/g, '').slice(0, 40)}|${(row.excerpt ?? '').replace(/\s+/g, '').slice(0, 24)}`;
+      if (seenClaims.has(dedupeKey)) {
+        row.verdict = 'duplicate';
+        row.reason = '与本轮已判定的断言重复，不重复计入分母';
+        continue;
+      }
+      seenClaims.add(dedupeKey);
       if (!row.excerpt) {
         // 无 excerpt（web/graph 来源可能没有片段）→ 无法判，标 unavailable 不计入分母
         row.verdict = 'unavailable';
@@ -231,7 +228,12 @@ async function main() {
         continue;
       }
       try {
-        const v = await judge(q, sentence, row.excerpt);
+        const v = await judgeSupport(
+          { base: JUDGE_BASE, key: JUDGE_KEY, model: JUDGE_MODEL },
+          q,
+          sentence,
+          row.excerpt,
+        );
         row.verdict = v.verdict;
         row.reason = v.reason;
         row.sentence = sentence.slice(0, 160);
@@ -256,7 +258,9 @@ async function main() {
    */
   if (total === 0) {
     console.log('-'.repeat(70));
-    console.log('  ⏭ 6 轮共 0 处引用标记 —— 指标无判别力，不产出通过结论');
+    console.log(
+      `  ⏭ ${CASES.length} 轮共 0 处引用标记 —— 指标无判别力，不产出通过结论`,
+    );
     const payload = {
       id: 's05',
       name: '引用正确率',
@@ -275,10 +279,25 @@ async function main() {
     return;
   }
 
+  // ── ①b 引用覆盖率（2026-10-22 新增）────────────────────────────
+  /**
+   * 为什么必须单独报：支撑性只回答「标了的引用对不对」，不回答「该标的有没有标」。
+   * 19 轮实测里有 10 轮**一处引用都没有** —— 支撑性照样能算出 88.9%，
+   * 但对用户而言「答案没法核对来源」才是更大的问题。两个指标合起来才是「引用可用」。
+   *
+   * 分母只算**本轮有知识库来源**的轮次（没资料时无引用是正常的，不该拉低覆盖率）。
+   */
+  const roundsWithSources = turns.filter((t) => t.sources > 0).length;
+  const roundsCited = turns.filter((t) => t.sources > 0 && t.citations > 0).length;
+  const coverageRate = roundsWithSources ? roundsCited / roundsWithSources : null;
+  const uncitedRounds = turns.filter((t) => t.sources > 0 && t.citations === 0);
+
   // ── ② 支撑性 ────────────────────────────────────────────────
   const judgedRows = citations.filter(
-    (c) => c.verdict && !['unavailable', 'error'].includes(c.verdict),
+    (c) =>
+      c.verdict && !['unavailable', 'error', 'duplicate'].includes(c.verdict),
   );
+  const duplicateClaims = citations.filter((c) => c.verdict === 'duplicate').length;
   const supported = judgedRows.filter((c) => c.verdict === 'supported').length;
   const partial = judgedRows.filter((c) => c.verdict === 'partial').length;
   const unsupported = judgedRows.filter((c) => c.verdict === 'unsupported').length;
@@ -320,6 +339,12 @@ async function main() {
       : `支撑性     ${(supportRate * 100).toFixed(1)}%（${supported}/${judgedRows.length}，目标 ≥90%；` +
           `宽松含 partial ${((supportRateLoose ?? 0) * 100).toFixed(1)}%）`,
   );
+  console.log(
+    coverageRate === null
+      ? '引用覆盖率 —（本轮没有任何知识库来源）'
+      : `引用覆盖率 ${(coverageRate * 100).toFixed(1)}%（${roundsCited}/${roundsWithSources}，` +
+          `即「有资料却没标引用」的轮次 ${uncitedRounds.length} 个；参考线 ≥80%，暂不设硬门槛）`,
+  );
   if (badCitations.length) {
     console.log('问题引用：');
     for (const c of badCitations) {
@@ -348,17 +373,31 @@ async function main() {
     name: '引用正确率',
     status,
     metric:
-      supportRate === null
+      (supportRate === null
         ? `编号有效性 ${(validityRate * 100).toFixed(1)}% / 支撑性 —`
-        : `编号有效性 ${(validityRate * 100).toFixed(1)}% / 支撑性 ${(supportRate * 100).toFixed(1)}%`,
+        : `编号有效性 ${(validityRate * 100).toFixed(1)}% / 支撑性 ${(supportRate * 100).toFixed(1)}%`) +
+      (coverageRate === null
+        ? ''
+        : ` / 引用覆盖 ${(coverageRate * 100).toFixed(1)}%`),
     target: '编号有效性 = 100%（硬指标）；支撑性 ≥ 90%',
     conclusion:
       status === 'skip'
         ? `${total} 处引用编号有效（${validCount}/${total}），但 judge ${judgeErrors} 次调用全部失败、无任何判定 —— 支撑性无法评价，不给结论`
-        : status === 'pass'
-          ? `${total} 处引用编号全部有效；抽检 ${judgedRows.length} 处中 ${supported} 处被原文直接支持`
-          : `未达标：编号有效性 ${(validityRate * 100).toFixed(1)}%、支撑性 ${((supportRate ?? 0) * 100).toFixed(1)}%`,
+        : (status === 'pass'
+            ? `${total} 处引用编号全部有效；抽检 ${judgedRows.length} 处中 ${supported} 处被原文直接支持`
+            : `未达标：编号有效性 ${(validityRate * 100).toFixed(1)}%、支撑性 ${((supportRate ?? 0) * 100).toFixed(1)}%`) +
+          (coverageRate === null
+            ? ''
+            : `。但引用覆盖率只有 ${(coverageRate * 100).toFixed(1)}%（${roundsCited}/${roundsWithSources}），` +
+              `有资料却没标引用的轮次 ${uncitedRounds.length} 个 —— 用户无法核对来源`),
     validity: { rate: validityRate, valid: validCount, total },
+    coverage: {
+      rate: coverageRate,
+      rounds_with_sources: roundsWithSources,
+      rounds_cited: roundsCited,
+      uncited_questions: uncitedRounds.map((t) => t.question),
+      note: '只算「有知识库来源的轮次」；无资料的轮次不标引用是正常行为',
+    },
     supportability: {
       rate: supportRate,
       loose_rate: supportRateLoose,
@@ -366,6 +405,8 @@ async function main() {
       partial,
       unsupported,
       judged: judgedRows.length,
+      /** 跨轮重复的断言数：它们被跳过了，否则会同一句话重复计入分母 */
+      duplicate_claims: duplicateClaims,
       unavailable: citations.filter((c) => c.verdict === 'unavailable').length,
       errors: citations.filter((c) => c.verdict === 'error').length,
     },
@@ -381,10 +422,12 @@ async function main() {
     caveats: [
       '支撑性口径取严：partial 不计为支持，同时给出「含 partial」的宽松值，两个数都报',
       `judge 只用 ${MAX_PER_TURN} 条/轮的抽样，不是全量判定 —— 分母是抽样数，不是引用总数`,
+      `同一断言跨轮只判一次（本次跳过 ${duplicateClaims} 条重复）。不去重的话，10 条抽检里可能有 6 条是同一句话，分母虚高、抖动被放大三倍`,
       'web / graph 来源若没有 excerpt，判为 unavailable 并从分母剔除（judge 无原文可依）',
       '支撑性判定用 data-retrieve 里的完整 chunk —— data-sources[].excerpt 只有 120 字，拿它判会系统性误判「原文未提及」',
       `人工抽检样本 ${manual.length} 条见 s05-manual-samples.json：judge 与人工不一致时以人工为准，用来校准 judge`,
       '编号有效性 100% 有一部分是「流式兜底」的功劳：越界编号在下发前就被丢掉，不会进入判定。它衡量的是「用户看到的引用是否有效」，不是「模型是否想编造」',
+      `引用覆盖率是「标了的对不对」之外的另一面：本次 ${roundsCited}/${roundsWithSources} 轮有引用，其余轮次有资料却一个编号都没标 —— 用户无法核对来源`,
     ],
   };
   writeItemJson(suiteDir, 's05-citation', payload);
