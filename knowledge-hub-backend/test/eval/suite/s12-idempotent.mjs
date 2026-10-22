@@ -28,7 +28,7 @@ import {
   apiPost,
   preflight,
 } from '../lib/base.mjs';
-import { createSuiteDir, writeItemJson } from '../lib/report.mjs';
+import { resolveSuiteDir, writeItemJson } from '../lib/report.mjs';
 
 const ES_URL = process.env.ES_URL ?? 'http://localhost:9200';
 const ES_INDEX = 'kh_chunk';
@@ -220,7 +220,7 @@ async function ensurePublished(token, docId) {
 }
 
 async function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
   console.log('s12 · 重发布幂等性');
   console.log('='.repeat(64));
 

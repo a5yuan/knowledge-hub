@@ -25,10 +25,10 @@
  *   DEGRADE_CASE=rerank-model ...        # 只跑某一组
  */
 import { spawn } from 'node:child_process';
-import { writeFileSync, existsSync, mkdirSync } from 'node:fs';
+import { writeFileSync, existsSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createSuiteDir, writeItemJson, writeItemLog, EVAL_ROOT } from '../lib/report.mjs';
+import { resolveSuiteDir, writeItemJson, writeItemLog, EVAL_ROOT } from '../lib/report.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 /** EVAL_ROOT = test/eval → 再上两级才是后端根（eval → test → backend） */
@@ -200,8 +200,7 @@ function killServer(child) {
 }
 
 async function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
-  if (process.env.SUITE_DIR) mkdirSync(suiteDir, { recursive: true });
+  const suiteDir = resolveSuiteDir();
   const onlyCase = process.env.DEGRADE_CASE;
 
   console.log('s10 · 降级有效性（进程级注入）');

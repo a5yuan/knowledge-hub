@@ -22,10 +22,18 @@
  *   S05_MAX_PER_TURN=3        每条用例最多判几个引用（默认 3，控制 judge 开销）
  */
 import 'dotenv/config';
-import { login, sseStream, summarizeTurn } from '../lib/base.mjs';
-import { createSuiteDir, writeItemJson, writeItemLog } from '../lib/report.mjs';
+import { login, sseStream, summarizeTurn, EVAL_TEMPERATURE } from '../lib/base.mjs';
+import { resolveSuiteDir, writeItemJson, writeItemLog } from '../lib/report.mjs';
 
-const JUDGE_MODEL = process.env.MEMORY_LLM_MODEL ?? 'qwen-plus';
+/**
+ * judge 自己用的模型必须显式指定，**不能复用 `MEMORY_LLM_MODEL`**。
+ *
+ * 2026-10-22 踩过：轻量模型换成 `deepseek-flash`（端点也换到 DeepSeek），
+ * 但 judge 仍走 DashScope 的 base，模型名在那边不存在 → 8 次调用全 400，
+ * 而 `judged=0` 又被算成支撑性 100%，报告显示"完美"。
+ * 现默认固定 qwen-plus（DashScope 上确定存在），可用 EVAL_JUDGE_MODEL 覆盖。
+ */
+const JUDGE_MODEL = process.env.EVAL_JUDGE_MODEL ?? 'qwen-plus';
 const JUDGE_BASE = process.env.EMBEDDING_BASE_URL ?? '';
 const JUDGE_KEY = process.env.OPENAI_API_KEY ?? '';
 const MAX_PER_TURN = Number(process.env.S05_MAX_PER_TURN ?? 3);
@@ -115,7 +123,7 @@ async function judge(question, sentence, excerpt) {
 }
 
 async function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
 
   console.log('s05 · 引用正确率（编号有效性 + 支撑性）');
   console.log('='.repeat(70));
@@ -134,7 +142,7 @@ async function main() {
 
   for (const [i, q] of CASES.entries()) {
     process.stdout.write(`  [${i + 1}/${CASES.length}] ${q.slice(0, 20)} … `);
-    const r = await sseStream(token, { content: q });
+    const r = await sseStream(token, { content: q, temperature: EVAL_TEMPERATURE });
     const s = summarizeTurn(r.events, r.wall_ms);
     const sources = Array.isArray(s.sources) ? s.sources : [];
     const sourceByIndex = new Map(sources.map((x) => [x.index, x]));
@@ -274,15 +282,29 @@ async function main() {
   const supported = judgedRows.filter((c) => c.verdict === 'supported').length;
   const partial = judgedRows.filter((c) => c.verdict === 'partial').length;
   const unsupported = judgedRows.filter((c) => c.verdict === 'unsupported').length;
-  // 口径：partial 不计为支持（宁严不宽）；报告里同时给「含 partial」的宽口径
-  const supportRate = judgedRows.length ? supported / judgedRows.length : 1;
+  /**
+   * 口径：partial 不计为支持（宁严不宽）；报告里同时给「含 partial」的宽口径。
+   *
+   * ⚠️ `judgedRows.length === 0` 时**不能算 1**（2026-10-22 踩过）：
+   * judge 全 400（模型名在端点上不存在）时 judged=0，支撑性被算成 100%，
+   * 报告显示"全部被原文支持"—— 这是最隐蔽的空过：有引用、有分母，就是没有判定。
+   * 此处改为 null，由下方判定逻辑降级为 skip。
+   */
+  const judgeErrors = citations.filter((c) => c.verdict === 'error').length;
+  const supportRate = judgedRows.length ? supported / judgedRows.length : null;
   const supportRateLoose = judgedRows.length
     ? (supported + partial) / judgedRows.length
-    : 1;
+    : null;
 
   const validityOk = validityRate === 1;
-  const supportOk = supportRate >= SUPPORT_TARGET;
-  const status = validityOk && supportOk ? 'pass' : 'fail';
+  const supportOk = supportRate === null ? false : supportRate >= SUPPORT_TARGET;
+  /** judge 一条都没判成 → 不足以给结论，标 skip 而不是 fail/pass */
+  const status =
+    supportRate === null && validityOk
+      ? 'skip'
+      : validityOk && supportOk
+        ? 'pass'
+        : 'fail';
 
   const badCitations = citations
     .filter((c) => !c.valid || c.verdict === 'unsupported')
@@ -293,8 +315,10 @@ async function main() {
     `编号有效性 ${(validityRate * 100).toFixed(1)}%（${validCount}/${total}，目标 100%）`,
   );
   console.log(
-    `支撑性     ${(supportRate * 100).toFixed(1)}%（${supported}/${judgedRows.length}，目标 ≥90%；` +
-      `宽松含 partial ${(supportRateLoose * 100).toFixed(1)}%）`,
+    supportRate === null
+      ? `支撑性     —（judge 未产出任何判定：${judgeErrors} 次调用失败，无法评价）`
+      : `支撑性     ${(supportRate * 100).toFixed(1)}%（${supported}/${judgedRows.length}，目标 ≥90%；` +
+          `宽松含 partial ${((supportRateLoose ?? 0) * 100).toFixed(1)}%）`,
   );
   if (badCitations.length) {
     console.log('问题引用：');
@@ -323,12 +347,17 @@ async function main() {
     id: 's05',
     name: '引用正确率',
     status,
-    metric: `编号有效性 ${(validityRate * 100).toFixed(1)}% / 支撑性 ${(supportRate * 100).toFixed(1)}%`,
+    metric:
+      supportRate === null
+        ? `编号有效性 ${(validityRate * 100).toFixed(1)}% / 支撑性 —`
+        : `编号有效性 ${(validityRate * 100).toFixed(1)}% / 支撑性 ${(supportRate * 100).toFixed(1)}%`,
     target: '编号有效性 = 100%（硬指标）；支撑性 ≥ 90%',
     conclusion:
-      status === 'pass'
-        ? `${total} 处引用编号全部有效；抽检 ${judgedRows.length} 处中 ${supported} 处被原文直接支持，无假引用`
-        : `未达标：编号有效性 ${(validityRate * 100).toFixed(1)}%、支撑性 ${(supportRate * 100).toFixed(1)}%`,
+      status === 'skip'
+        ? `${total} 处引用编号有效（${validCount}/${total}），但 judge ${judgeErrors} 次调用全部失败、无任何判定 —— 支撑性无法评价，不给结论`
+        : status === 'pass'
+          ? `${total} 处引用编号全部有效；抽检 ${judgedRows.length} 处中 ${supported} 处被原文直接支持`
+          : `未达标：编号有效性 ${(validityRate * 100).toFixed(1)}%、支撑性 ${((supportRate ?? 0) * 100).toFixed(1)}%`,
     validity: { rate: validityRate, valid: validCount, total },
     supportability: {
       rate: supportRate,
@@ -355,6 +384,7 @@ async function main() {
       'web / graph 来源若没有 excerpt，判为 unavailable 并从分母剔除（judge 无原文可依）',
       '支撑性判定用 data-retrieve 里的完整 chunk —— data-sources[].excerpt 只有 120 字，拿它判会系统性误判「原文未提及」',
       `人工抽检样本 ${manual.length} 条见 s05-manual-samples.json：judge 与人工不一致时以人工为准，用来校准 judge`,
+      '编号有效性 100% 有一部分是「流式兜底」的功劳：越界编号在下发前就被丢掉，不会进入判定。它衡量的是「用户看到的引用是否有效」，不是「模型是否想编造」',
     ],
   };
   writeItemJson(suiteDir, 's05-citation', payload);
@@ -365,7 +395,8 @@ async function main() {
   console.log(`结论：${payload.conclusion}`);
   console.log(`人工抽检样本：${manual.length} 条（s05-manual-samples.json）`);
   console.log(`明细：${suiteDir}`);
-  if (status !== 'pass') process.exitCode = 1;
+  if (status === 'skip') process.exitCode = 2;
+  else if (status !== 'pass') process.exitCode = 1;
 }
 
 main().catch((err) => {

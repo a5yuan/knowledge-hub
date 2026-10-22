@@ -12,7 +12,7 @@
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { createSuiteDir, writeItemJson, EVAL_ROOT } from '../lib/report.mjs';
+import { resolveSuiteDir, writeItemJson, EVAL_ROOT } from '../lib/report.mjs';
 
 const REPORT = join(EVAL_ROOT, 'eval-report.md');
 
@@ -29,7 +29,7 @@ function parseOverview(md) {
 const THRESHOLD = 4.0; // 5 分制下 4.0 = 「良好」，低于则如实标 fail
 
 function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
   console.log('s02 · 生成质量（复用 eval-report.md）');
 
   if (!existsSync(REPORT)) {

@@ -17,10 +17,10 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { summarize } from '../lib/stats.mjs';
-import { createSuiteDir, writeItemJson } from '../lib/report.mjs';
+import { resolveSuiteDir, writeItemJson } from '../lib/report.mjs';
 
 function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
   console.log('s08 · Agent 全链路延迟（复用 s07 样本）');
 
   const samplesPath = join(suiteDir, 'samples.json');

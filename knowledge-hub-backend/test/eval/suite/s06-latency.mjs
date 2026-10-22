@@ -12,7 +12,7 @@
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { createSuiteDir, writeItemJson, EVAL_ROOT } from '../lib/report.mjs';
+import { resolveSuiteDir, writeItemJson, EVAL_ROOT } from '../lib/report.mjs';
 
 const STRESS = join(EVAL_ROOT, 'results', 'stress-report.md');
 const SCALE = join(EVAL_ROOT, 'results', 'scale-curve.md');
@@ -59,7 +59,7 @@ function mainTargetSection(md) {
 }
 
 function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
   console.log('s06 · 检索延迟分位（复用既有压测报告）');
 
   if (!existsSync(STRESS)) {

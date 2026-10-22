@@ -23,6 +23,19 @@ export function createSuiteDir(now = new Date()) {
   return dir;
 }
 
+/**
+ * 解析本次运行该写到哪个 suite 目录，并**保证目录存在**。
+ *
+ * 为什么单独封一层：`SUITE_DIR` 是外部传进来的，之前各脚本直接用它拼路径，
+ * 目录不存在时会在「跑完 10 分钟之后」写报告那一刻才 ENOENT 崩掉 —— 白跑。
+ * 顺手把 s10 里临时打的 mkdir 补丁也收编到这里。
+ */
+export function resolveSuiteDir(now = new Date()) {
+  const dir = process.env.SUITE_DIR ?? createSuiteDir(now);
+  mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
 /** markdown 表格（单元格内的 | 会被转义，避免破坏表结构） */
 export function mdTable(headers, rows) {
   const esc = (v) => String(v ?? '').replace(/\|/g, '\\|').replace(/\n/g, ' ');

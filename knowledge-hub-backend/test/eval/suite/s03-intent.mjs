@@ -22,8 +22,8 @@
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { login, sseStream, summarizeTurn } from '../lib/base.mjs';
-import { createSuiteDir, writeItemJson, writeItemLog, EVAL_ROOT } from '../lib/report.mjs';
+import { login, sseStream, summarizeTurn, EVAL_TEMPERATURE } from '../lib/base.mjs';
+import { resolveSuiteDir, writeItemJson, writeItemLog, EVAL_ROOT } from '../lib/report.mjs';
 import { confusionMatrix } from '../lib/stats.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
@@ -35,7 +35,7 @@ const KNOWLEDGE_RECALL_TARGET = 0.9;
 const NEEDS_RETRIEVE = new Set(['knowledge', 'knowledge_then_web']);
 
 async function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
   const limit = Number(process.env.S03_LIMIT ?? 0);
 
   const set = JSON.parse(readFileSync(SET_PATH, 'utf8'));
@@ -63,7 +63,7 @@ async function main() {
     let s = null;
     let err = null;
     try {
-      const r = await sseStream(token, { content: it.q });
+      const r = await sseStream(token, { content: it.q, temperature: EVAL_TEMPERATURE });
       s = summarizeTurn(r.events, r.wall_ms);
     } catch (e) {
       err = e instanceof Error ? e.message : String(e);
@@ -71,7 +71,15 @@ async function main() {
     const predicted = s?.intent ?? null;
     const ok = predicted === it.intent;
     const tools = s?.tools ?? {};
-    const retrieved = (tools.retrieve_knowledge ?? 0) > 0;
+    /**
+     * 「本轮是否检索过知识库」的口径（2026-10-22 修正）：
+     * 不只看模型发起的 tool_call —— 预检索命中、或代码代调（P0 兜底），都算真的查过。
+     * 只看 tools 会把「代码补的检索」误判成「没检索」，行为一致率会虚低（曾出现 84%）。
+     */
+    const retrieved =
+      (tools.retrieve_knowledge ?? 0) > 0 ||
+      (s?.forced_retrieve ?? false) ||
+      (s?.kb_sources_count ?? 0) > 0;
     const behaviorOk = NEEDS_RETRIEVE.has(it.intent) ? retrieved : !retrieved;
 
     samples.push({
@@ -81,9 +89,19 @@ async function main() {
       predicted_intent: predicted,
       intent_ok: ok,
       expected_must_call: it.must_call,
+      /** k_t_w 这类「先知识库、不够再联网」的意图，web_search 是允许的可选调用，不算多余 */
+      expected_optional_call: it.optional_call ?? [],
       tools,
       tool_calls: s?.tool_calls ?? 0,
       retrieved,
+      forced_retrieve: s?.forced_retrieve ?? false,
+      /**
+       * 预检索（前置管线）登记的来源数。判 s04 漏调时必须看它：
+       * 预检索已给出资料时「不调工具」是设计内行为（INTENT_DIRECTIVES.knowledge 明写）。
+       */
+      sources_count: s?.sources_count ?? 0,
+      kb_sources_count: s?.kb_sources_count ?? 0,
+      web_searched: (tools.web_search ?? 0) > 0,
       behavior_ok: behaviorOk,
       steps: s?.steps ?? 0,
       wall_ms: s?.wall_ms ?? 0,

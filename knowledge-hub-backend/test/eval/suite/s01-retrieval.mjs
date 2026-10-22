@@ -14,7 +14,7 @@
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { createSuiteDir, writeItemJson, EVAL_ROOT } from '../lib/report.mjs';
+import { resolveSuiteDir, writeItemJson, EVAL_ROOT } from '../lib/report.mjs';
 
 const REPORT = join(EVAL_ROOT, 'eval-report.md');
 
@@ -31,7 +31,7 @@ function parseOverview(md) {
 }
 
 function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
   console.log('s01 · 检索质量（复用 eval-report.md）');
 
   if (!existsSync(REPORT)) {

@@ -27,7 +27,7 @@ import {
   preflight,
   TOOL_BUDGET_LIMITS,
 } from '../lib/base.mjs';
-import { createSuiteDir, writeItemJson } from '../lib/report.mjs';
+import { resolveSuiteDir, writeItemJson } from '../lib/report.mjs';
 
 /**
  * 压力用例：一句话塞 5 个子问题 + 1 个明确不存在的主题。
@@ -49,7 +49,7 @@ const sec = (ms) => (ms / 1000).toFixed(1);
 const STILL_SEARCHING = /正在(检索|搜索|查询|换词|重新检索)|继续检索|稍后再|接下来我会/;
 
 async function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
   const started = new Date();
 
   console.log('s11 · 预算拦截有效性');

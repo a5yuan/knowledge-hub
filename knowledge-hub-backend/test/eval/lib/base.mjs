@@ -25,6 +25,18 @@ export const MAX_ITERATIONS = 5;
 
 const msg = (err) => (err instanceof Error ? err.message : String(err));
 
+/**
+ * 评测用采样温度（工单 24 补）。
+ *
+ * 默认不传 → 后端按 0.3 走；设 `EVAL_TEMPERATURE=0` 则逐请求传 0。
+ * 为什么要这个：同一问题两次跑出相反结论（意图、工具选择），
+ * 在 0.3 下 50 条样本的有效精度远低于名义值。可复现是评测的前置条件。
+ */
+export const EVAL_TEMPERATURE =
+  process.env.EVAL_TEMPERATURE === undefined
+    ? undefined
+    : Number(process.env.EVAL_TEMPERATURE);
+
 /** 登录拿 access token（缺密码直接抛，避免拿空密码去试） */
 export async function login(base = BASE) {
   if (!PASSWORD) {
@@ -51,7 +63,7 @@ export async function login(base = BASE) {
  * - `ttft_text_ms`：首个 text-delta（用户真正看到字）
  * - `wall_ms`：整轮结束
  */
-export async function sseStream(token, { content, sessionId }, base = BASE) {
+export async function sseStream(token, { content, sessionId, temperature }, base = BASE) {
   const t0 = Date.now();
   const res = await fetch(`${base}/ai/sessions/messages`, {
     method: 'POST',
@@ -59,7 +71,12 @@ export async function sseStream(token, { content, sessionId }, base = BASE) {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-    body: JSON.stringify({ content, ...(sessionId ? { sessionId } : {}) }),
+    body: JSON.stringify({
+      content,
+      ...(sessionId ? { sessionId } : {}),
+      // 未显式传时后端用默认 0.3；评测要可复现就传 0（EVAL_TEMPERATURE=0）
+      ...(typeof temperature === 'number' ? { temperature } : {}),
+    }),
   });
   if (!res.ok) {
     const text = await res.text().catch(() => '');
@@ -122,6 +139,14 @@ export function summarizeTurn(events, wallMs) {
   const rewriteStages = pick('data-status').filter(
     (e) => e.data?.stage === 'rewrite',
   );
+  /**
+   * 工单 24 P0：代调检索（预检索为空时由代码补一次）。
+   * 它不发 tool_call，只看 `tools.retrieve_knowledge` 会误判成「本轮没检索」——
+   * 所以后端会额外发一条 `data-status{stage:'retrieve', forced:true}`。
+   */
+  const forcedRetrieve = pick('data-status').some(
+    (e) => e.data?.stage === 'retrieve' && e.data?.forced === true,
+  );
 
   const steps = pick('start-step')
     .map((e) => e.data?.step)
@@ -148,6 +173,16 @@ export function summarizeTurn(events, wallMs) {
       web_search: webs.length,
       rewrite_query: rewriteStages.length,
     },
+    /** 本轮是否发生过「代码代调的检索」（工单 24 P0）：模型没发 tool_call，但确实查了库 */
+    forced_retrieve: forcedRetrieve,
+    /**
+     * 只统计**知识库类**来源。
+     * `sources_count` 含 web / graph，用它判「有没有查知识库」会把「查了网页」误算成「查了库」——
+     * 2026-10-22 踩过：加上 sources_count>0 后，10 条 web 用例全被判成「多余检索」，行为一致率掉到 80%。
+     */
+    kb_sources_count: (Array.isArray(sources?.sources) ? sources.sources : []).filter(
+      (x) => x?.kind === 'knowledge',
+    ).length,
     /**
      * 预算是否触顶。
      * ⚠️ 这是**间接**判定：SSE 只下发成功执行的工具事件，被拒绝的 ToolMessage 不进事件流，

@@ -22,8 +22,8 @@
  *   ENABLE_USAGE_CAPTURE=true 启动后端，然后
  *   EVAL_PASSWORD=xxx node test/eval/suite/s09-cost.mjs
  */
-import { login, sseStream, summarizeTurn, probeRerank } from '../lib/base.mjs';
-import { createSuiteDir, writeItemJson, writeItemLog } from '../lib/report.mjs';
+import { login, sseStream, summarizeTurn, probeRerank, EVAL_TEMPERATURE } from '../lib/base.mjs';
+import { resolveSuiteDir, writeItemJson, writeItemLog } from '../lib/report.mjs';
 
 /** 成本占比用的单价（每 1K token） */
 const PRICE_IN = Number(process.env.PRICE_INPUT_PER_1K ?? 0.0008);
@@ -64,7 +64,7 @@ function fmtCost(v) {
 }
 
 async function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
 
   console.log('s09 · Token 成本（生产侧采集）');
   console.log('='.repeat(70));
@@ -84,7 +84,7 @@ async function main() {
 
   for (const [i, c] of CASES.entries()) {
     process.stdout.write(`  [${i + 1}/${CASES.length}] ${c.q.slice(0, 24)} … `);
-    const r = await sseStream(token, { content: c.q });
+    const r = await sseStream(token, { content: c.q, temperature: EVAL_TEMPERATURE });
     const s = summarizeTurn(r.events, r.wall_ms);
     const usageEvt = r.events.filter((e) => e.type === 'usage').at(-1);
     const entries = Array.isArray(usageEvt?.data?.entries)

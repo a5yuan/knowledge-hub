@@ -143,6 +143,7 @@ pnpm build                                   # vue-tsc -b && vite build
 | Agent 工具可用性契约（门控 + 结构化拒绝） | `backend-integration/issues/22-tool-availability-contract.md` |
 | Agent 工具层抽取（`ai/tools/` 契约） | `backend-integration/issues/23-agent-tool-layer-extraction.md` |
 | 评测套件（12 项指标 / `test/eval/`） | `backend-integration/issues/24-eval-suite.md` |
+| 评测复盘（踩坑与口径修正、未处理项） | `backend-integration/issues/24R-eval-retrospective.md` |
 
 ### 4.2 `evolving` —— 进行中（了解下一步）
 

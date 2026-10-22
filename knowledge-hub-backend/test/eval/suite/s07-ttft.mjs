@@ -26,7 +26,7 @@ import {
   preflight,
 } from '../lib/base.mjs';
 import { summarize } from '../lib/stats.mjs';
-import { createSuiteDir, writeItemJson, EVAL_ROOT } from '../lib/report.mjs';
+import { resolveSuiteDir, writeItemJson, EVAL_ROOT } from '../lib/report.mjs';
 
 const DATASET = join(EVAL_ROOT, 'dataset.json');
 const ROUNDS = Number(process.env.TTF_T_ROUNDS ?? 5);
@@ -53,7 +53,7 @@ function loadQuestions() {
 }
 
 async function main() {
-  const suiteDir = process.env.SUITE_DIR ?? createSuiteDir();
+  const suiteDir = resolveSuiteDir();
   console.log('s07 · 首 token 延迟 TTFT（双口径）');
   console.log('='.repeat(66));
 
