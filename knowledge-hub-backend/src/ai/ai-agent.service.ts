@@ -30,6 +30,12 @@ import { safeDomain } from './tools/utils';
 import { EXCERPT_LEN } from './tools/constants';
 import type { ToolDeps } from './tools/types';
 import { buildToolDenial, TOOL_BUDGET_LIMITS } from './tool-denial';
+import {
+  CitationStreamFilter,
+  findInvalidCitations,
+  stripCitationMarkers,
+} from './citation';
+import { shouldForceRetrieve } from './force-retrieve';
 
 /** 引用来源（工具登记时不含 index，finalSources 统一编号） */
 type AiSourceDraft = Omit<AiSource, 'index'>;
@@ -129,6 +135,7 @@ const SYSTEM_PROMPT = `你是企业智能知识库的 AI 问答助手，可用�
 要求：
 - 回答使用中文、markdown 格式，简洁准确
 - 只依据资料中实际给出的内容作答，每处依据句尾标 [n]（n 为资料全局编号，图谱关系同样有编号）
+- **只能使用资料里出现过的编号**：资料只到 [2] 就绝不能写 [3]；没有资料可引就不标编号。编造编号比不标更糟——用户点开会发现文不对题
 - 仅当本轮**实际检索过知识库**且确实没有相关信息时，才可告知用户「知识库中未检索到相关信息」，禁止用记忆或制度背景编造；本轮没有检索知识库时不得作此陈述（那会让用户误以为查过了）
 - 引用 Web 结果时在句末以 (来源: 域名) 标注
 - 工具不可用或无结果时如实告知，不要编造；若问题无需工具（闲聊、个人偏好），直接回答
@@ -321,6 +328,56 @@ export class AiAgentService {
         return true;
       };
 
+      /**
+       * 工单 24 P0 兜底 —— 「判对了却不检索」。
+       *
+       * 现象（s04 实测 5/50）：意图判成 knowledge、预检索返回 0 条，
+       * 模型一次工具都不调，直接用参数记忆答内部制度问题，答案里也没有任何引用。
+       *
+       * 处理：由代码代调一次 `retrieve_knowledge`，把结果（**包括「0 条命中」这个事实**）
+       * 拼进【知识库检索资料】。检索为空时，模型至少拿到"确实查过且没有"的依据，
+       * 会答「库内没有相关规定」而不是照着通用常识编一套流程。
+       *
+       * 为什么不用 `tool_choice` 强制首轮调用（更优雅的做法）：qwen-plus 支持，
+       * 但 DeepSeek 的 thinking 模式对 required/指定函数直接返回 400（2026-10-21 实测）。
+       * 兜底逻辑不能依赖供应商特性 —— 主回答模型一换，整轮对话就失败。
+       *
+       * 开关：`FORCE_RETRIEVE_ON_EMPTY=false` 可关闭（默认开）。代调计入工具预算。
+       */
+      let forcedRetrieveText = '';
+      const forceRetrieve = shouldForceRetrieve({
+        enabled: process.env.FORCE_RETRIEVE_ON_EMPTY !== 'false',
+        intentAllowsKb,
+        needRetrieve: plan.needRetrieve,
+        isChitchat: plan.isChitchat,
+        kbItemCount: kbHit.items.length,
+      });
+      if (forceRetrieve) {
+        try {
+          // 让前端和评测都看得见「这次检索是代码补的」—— 否则它只存在于日志里，
+          // 评测会误判成「本轮没检索」（s03 的行为一致率就是这么掉下来的）
+          this.emit(res, 'data-status', {
+            stage: 'retrieve',
+            text: '预检索为空，补充检索...',
+            forced: true,
+          });
+          const forced = await retrieveKnowledge(
+            { query: this.buildForceQuery(plan, params.content) },
+            { question: params.content, scope },
+            this.toolDeps(res, sources),
+          );
+          budget.total += 1;
+          forcedRetrieveText = forced.content;
+          this.logger.log(
+            `预检索为空 → 代调 retrieve_knowledge 一次 grade=${forced.grade} items=${forced.items?.length ?? 0}`,
+          );
+        } catch (err) {
+          this.logger.warn(
+            `代调 retrieve_knowledge 失败（不影响主链路）：${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+
       // 6. 手写 tool-calling 循环（v2 事件）；每轮按意图门控 + 剩余预算动态绑定工具（11 号工单）
       const baseModel = this.buildModel(params);
       const chatModelName = this.resolveChatModelName(params);
@@ -328,12 +385,25 @@ export class AiAgentService {
         SystemMessage | HumanMessage | AIMessage | ToolMessage
       > = [
         new SystemMessage(
-          this.buildSystemContext(memHits, summary, kbHit.text, plan.intent),
+          this.buildSystemContext(
+            memHits,
+            summary,
+            kbHit.text || forcedRetrieveText,
+            plan.intent,
+          ),
         ),
+        /**
+         * 工单 24 P0：注入历史时**剥掉 assistant 侧的引用标记**。
+         *
+         * `[n]` 是"本轮"的全局编号 —— 历史里的 `[1]` 指的是上一轮的第 1 条来源，
+         * 本轮的第 1 条可能是完全另一个文档。带着旧编号进上下文，模型很容易沿用，
+         * 于是出现"只有 1 条来源却引 [3]"这种越界编号（s05 实测到的那例）。
+         * 只影响送给模型的 prompt，不动落库内容与前端展示。
+         */
         ...history.map((h) =>
           h.role === 'user'
             ? new HumanMessage(h.content)
-            : new AIMessage(h.content),
+            : new AIMessage(stripCitationMarkers(h.content)),
         ),
         new HumanMessage(params.content),
       ];
@@ -341,6 +411,12 @@ export class AiAgentService {
       let answer = '';
       let textSeq = 0;
       let reasoningSeq = 0;
+      /**
+       * 工单 24 P0：流式引用过滤。越界编号在**下发前**就丢掉，
+       * 而不是等生成完再改（那时用户已经看到了 `[3]`）。
+       * 合法上限实时读 `sources.length` —— 工具调用会不断登记新来源。
+       */
+      const citeFilter = new CitationStreamFilter(() => sources.length);
       /**
        * 工单 22：纯拒绝轮的「下一轮强制无工具」开关。
        *
@@ -401,13 +477,16 @@ export class AiAgentService {
           }
           const delta = typeof chunk.content === 'string' ? chunk.content : '';
           if (delta) {
-            if (!textOpened) {
-              textSeq += 1;
-              this.emit(res, 'text-start', { id: `text_${textSeq}` });
-              textOpened = true;
+            const safe = citeFilter.push(delta);
+            if (safe) {
+              if (!textOpened) {
+                textSeq += 1;
+                this.emit(res, 'text-start', { id: `text_${textSeq}` });
+                textOpened = true;
+              }
+              content += safe;
+              this.emit(res, 'text-delta', { id: `text_${textSeq}`, delta: safe });
             }
-            content += delta;
-            this.emit(res, 'text-delta', { id: `text_${textSeq}`, delta });
           }
           for (const tc of chunk.tool_call_chunks ?? []) {
             const cur = toolCalls.get(tc.index ?? 0) ?? {
@@ -420,6 +499,17 @@ export class AiAgentService {
             cur.args += tc.args ?? '';
             toolCalls.set(tc.index ?? 0, cur);
           }
+        }
+        // 流结束：把过滤器残留的尾部吐出去，否则末字若是个孤立的 `[` 会被吞掉
+        const citeTail = citeFilter.flush();
+        if (citeTail) {
+          if (!textOpened) {
+            textSeq += 1;
+            this.emit(res, 'text-start', { id: `text_${textSeq}` });
+            textOpened = true;
+          }
+          content += citeTail;
+          this.emit(res, 'text-delta', { id: `text_${textSeq}`, delta: citeTail });
         }
         if (reasoningOpened)
           this.emit(res, 'reasoning-end', { id: `reasoning_${reasoningSeq}` });
@@ -619,6 +709,18 @@ export class AiAgentService {
       // 5. 引用过滤（11 号工单阶段6：只下发被 [n] 引用的来源；无标记回退全量）→ data-sources
       const finalSources = this.filterCitedSources(answer, sources);
       this.emit(res, 'data-sources', { sources: finalSources });
+      // 工单 24 P0：越界引用编号（引了 [n] 但本轮没有第 n 条来源）—— 只报不改正文
+      const invalidCitations = findInvalidCitations(answer, sources.length);
+      if (invalidCitations.length > 0) {
+        this.logger.warn(
+          `答案含越界引用编号 [${invalidCitations.join('],[')}]，本轮来源共 ${sources.length} 条`,
+        );
+      }
+      if (citeFilter.droppedCount > 0) {
+        this.logger.warn(
+          `流式过滤丢掉了 ${citeFilter.droppedCount} 个越界引用编号（本轮来源 ${sources.length} 条）`,
+        );
+      }
 
       // 6. suggestions（非流式快速生成，失败兜底固定池）→ finish
       const suggestions = await this.generateSuggestions(messages).catch(
@@ -635,6 +737,10 @@ export class AiAgentService {
         messageId,
         suggestions,
         traceId: trace.traceId(),
+        // 工单 24 P0：越界编号随 finish 下发，前端/评测可直接统计（无越界时为空数组，省略）
+        ...(invalidCitations.length > 0 ? { invalidCitations } : {}),
+        // 被流式过滤器丢掉的越界编号数 —— 这才是「模型想编造几次」的真实计数
+        ...(citeFilter.droppedCount > 0 ? { droppedCitations: citeFilter.droppedCount } : {}),
       });
 
       // 7. 持久化 assistant 消息（断连时也落库已生成部分）+ 记忆管线收尾（图3 第5/6步）
@@ -682,6 +788,12 @@ export class AiAgentService {
   private buildModel(params: AiChatStreamParams): ChatOpenAI {
     const thinking = params.enableThinking === true;
     const base = {
+      /**
+       * `apiKey` 才是 @langchain/openai v1 真正读取的字段；`openAIApiKey` 在该版本被忽略，
+       * 之前一直能用是因为 process.env.OPENAI_API_KEY 恰好与配置同值。
+       * 一旦给轻量模型配独立供应商（键不同），只传 openAIApiKey 会静默回落到 env 的旧 key → 401。
+       */
+      apiKey: this.config.get<string>('OPENAI_API_KEY'),
       openAIApiKey: this.config.get<string>('OPENAI_API_KEY'),
       temperature: thinking ? undefined : (params.temperature ?? 0.3),
       configuration: { baseURL: this.config.get<string>('EMBEDDING_BASE_URL') },
@@ -742,7 +854,7 @@ export class AiAgentService {
       isChitchat: false,
     };
     try {
-      const model = this.buildUtilityModel(300, 5000);
+      const model = this.buildUtilityModel(300, this.planTimeoutMs());
       const recent =
         history
           .slice(-6)
@@ -840,7 +952,7 @@ export class AiAgentService {
   ): Promise<ChunkGrade[] | null> {
     if (chunks.length === 0) return [];
     try {
-      const model = this.buildUtilityModel(500, 5000);
+      const model = this.buildUtilityModel(500, this.gradeTimeoutMs());
       const list = chunks
         .map((c, i) => `[${i}] ${c.title}\n${c.content.slice(0, 300)}`)
         .join('\n\n');
@@ -1096,21 +1208,60 @@ grade 取值：
     }
   }
 
+  /** 代调检索用的 query：优先模型给的建议检索词，其次改写句，最后原问题 */
+  private buildForceQuery(plan: PlanResult, question: string): string {
+    if (plan.suggestedTerms.length > 0) return plan.suggestedTerms.join(' ');
+    return plan.rewrittenQuery || question;
+  }
+
   /** 轻量模型名（工单 24 §s09：用量上报也要带同一个名字，避免与构建处漂移） */
   private utilityModelName(): string {
     return this.config.get<string>('MEMORY_LLM_MODEL', 'qwen-turbo');
   }
 
+  /**
+   * 意图路由 / 切题评估的超时（毫秒）。
+   *
+   * 为什么要可配：这两个环节原来写死 5s，而 `MEMORY_LLM_MODEL`（qwen3.8-flash）
+   * 频繁超过 5s。一旦超时，`planIntent` 直接 fallback 成 `knowledge`、
+   * `gradeChunks` 直接放行全量资料 —— **约四分之一的轮次根本没做真正的判断**，
+   * 且过程中不会报错，只在日志里留一行 WARN。
+   *
+   * 2026-10-21 实测：50 条 × 2 轮共 100 次请求，意图路由降级 27 次。
+   * 放宽到 15s 后由 `PLAN_TIMEOUT_MS` 控制，默认 15s（代价是最慢轮次首字延迟变长）。
+   */
+  private planTimeoutMs(): number {
+    return Number(this.config.get('PLAN_TIMEOUT_MS', 15000));
+  }
+
+  /** 切题评估超时；默认保持原值 5s，可用 `GRADE_TIMEOUT_MS` 覆盖 */
+  private gradeTimeoutMs(): number {
+    return Number(this.config.get('GRADE_TIMEOUT_MS', 5000));
+  }
+
   /** 轻量工具模型（改写判断/摘要/记忆抽取共用）：MEMORY_LLM_MODEL 默认 qwen-turbo，快速失败 */
   private buildUtilityModel(maxTokens: number, timeoutMs: number): ChatOpenAI {
+    /**
+     * 轻量模型可以走**独立端点**（`UTILITY_API_KEY` / `UTILITY_BASE_URL`），
+     * 不填则回落到主端点（原行为）。用于「意图路由打算换更快的供应商」这类实验：
+     * 只改这一段，主回答与向量化不受影响 —— 向量化必须留在 DashScope。
+     */
+    const utilityKey = this.config.get<string>('UTILITY_API_KEY');
+    const utilityBase = this.config.get<string>('UTILITY_BASE_URL');
     return new ChatOpenAI({
-      openAIApiKey: this.config.get<string>('OPENAI_API_KEY'),
+      apiKey: utilityKey || this.config.get<string>('OPENAI_API_KEY'),
+      openAIApiKey: utilityKey || this.config.get<string>('OPENAI_API_KEY'),
       modelName: this.utilityModelName(),
-      temperature: 0.1,
+      /**
+       * 默认 0.1。评测要可复现时设 `UTILITY_TEMPERATURE=0` ——
+       * 意图路由/切题评估都是「输出 JSON 分类」任务，0.1 的采样会带来同题不同判，
+       * 而这两个环节一旦判错，下游检索、引用、工具选择全链路都跟着变。
+       */
+      temperature: Number(this.config.get('UTILITY_TEMPERATURE', 0.1)),
       maxTokens,
       maxRetries: 0,
       configuration: {
-        baseURL: this.config.get<string>('EMBEDDING_BASE_URL'),
+        baseURL: utilityBase || this.config.get<string>('EMBEDDING_BASE_URL'),
         timeout: timeoutMs,
       },
       // 工单 13：意图路由 / 切题评估 / 记忆抽取共用轻量模型，同样进本轮 trace
@@ -1235,6 +1386,7 @@ grade 取值：
     messages: Array<SystemMessage | HumanMessage | AIMessage | ToolMessage>,
   ): Promise<string[]> {
     const suggestionModel = new ChatOpenAI({
+      apiKey: this.config.get<string>('OPENAI_API_KEY'),
       openAIApiKey: this.config.get<string>('OPENAI_API_KEY'),
       modelName: this.config.get<string>('LLM_MODEL', 'qwen-plus'),
       temperature: 0.8,
