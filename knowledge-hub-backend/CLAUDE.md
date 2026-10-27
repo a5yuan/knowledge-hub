@@ -1,7 +1,8 @@
 # CLAUDE.md — knowledge-hub-backend
 
-> 面向 AI 助手的后端约定补充。项目总览与模块地图见**工作区根目录** `AGENTS.md`（根目录不是 git 仓库，本文件只覆盖本仓）。
-> Langfuse 可观测与 RAG 评测的完整设计与执行记录见 `../backend-integration/issues/13-langfuse-eval.md`（同样在根工作区，不在本仓）。
+> 本文件只覆盖 `knowledge-hub-backend/` 的**目录特有约定**（Langfuse 可观测、RAG 评测）。
+> 项目总览、路由表、全局红线见仓库根 `AGENTS.md`；本机环境坑与工具链问题已统一到 `../docs/engineering/pitfalls.md`（单一来源，本文件不再重复）。
+> Langfuse 可观测与 RAG 评测的完整设计与执行记录见 `../backend-integration/issues/13-langfuse-eval.md`（本地私有，不在仓库）。
 
 ## Langfuse 可观测（工单 13）
 
@@ -47,9 +48,17 @@ pnpm run eval        # 逐条 HTTP SSE 跑真实对话 → 八指标 → 回写 
 - 产物 `corpus-manifest.json` / `eval-report.md` **含本机数据库的 doc_id，已 gitignore，不要提交**
 - runner 会把数据集同步为 Langfuse dataset（`ensureDataset()` 负责先建集，`dataset.createItem` 不会自动建集，缺集会 404）
 
-## 本仓踩坑（务必先读）
+## 本仓踩坑
 
-1. **不要跑 `pnpm run lint`**：它带 `eslint --fix` + prettier，会按与现有代码风格不一致的配置重排大量无关文件（实测一次改 63 个文件）。校验用 `pnpm run build` + `pnpm test`。该仓库 lint 本身当前也不通过（约 171 项既有类型解析报错）。
-2. **`src/storage/rustfs.service.ts` 的 `onModuleInit` 缺兜底**：`HeadBucketCommand` 失败后走 catch，而 `CreateBucketCommand` 没有 try/catch —— RustFS 未就绪时会抛未捕获异常让整个进程 `exit 1`。排障时若看到 `TimeoutError: socket hang up`（`$metadata.attempts`）即为此，可 `docker restart knowledge_hub_rustfs` 临时恢复。
-3. **启动慢 ≠ 卡死**：本机内存紧张时（Docker 的 WSL2 虚拟机可占 ~5 GB 且不归还宿主），Node 同步加载依赖图会因缺页抖动拖到 3~4 分钟，期间**没有任何日志输出**（事件循环被阻塞）。先看 `Pages Input/sec` 与可用内存，不要误判成死锁。
-4. Docker/WSL 维护顺序：**先 `docker desktop stop`，再 `wsl --shutdown`，最后启动 Docker Desktop**。在 Docker 运行时直接 `wsl --shutdown` 会破坏宿主→容器端口转发（TCP 能连、握手被空响应/ECONNRESET）；Docker 重启后部分容器（rabbitmq/redis/rustfs/neo4j）可能不自启，需 `docker start` 补起。
+已统一到 [`../docs/engineering/pitfalls.md`](../docs/engineering/pitfalls.md)，本文件只留索引 —— 避免两处维护产生分歧。
+
+与本仓最相关的四条：
+
+| 位置 | 内容 |
+|---|---|
+| §一.6 | 不要跑 `pnpm run lint`（实测一次重排 63 个文件；lint 本身也不通过，约 171 项既有报错） |
+| §一.7 | RustFS `onModuleInit` 缺兜底：未就绪时抛未捕获异常，进程 `exit 1` |
+| §一.8 | 启动慢 ≠ 卡死（WSL2 可占 ~5GB 不归还，缺页抖动 3~4 分钟且无日志） |
+| §一.9 | Docker / WSL 维护顺序：先 `docker desktop stop`，再 `wsl --shutdown`（反序破坏端口转发） |
+
+命名高频踩点见同上文件 §二：compose 文件名是 `docker.compose.yml`、ES 服务名是 `es`、容器名是 `knowledge_hub_postgres`（下划线）。
