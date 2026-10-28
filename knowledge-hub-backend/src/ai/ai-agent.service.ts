@@ -41,8 +41,8 @@ import { CATALOG } from './ui/catalog';
 import { validateSurface, type Surface } from './ui/surface';
 import { buildKnowledgeSurface } from './ui/builders/knowledge';
 import { buildWebSurface } from './ui/builders/web';
-import { buildGraphSurface } from './ui/builders/graph';
-import { composeSurfaces } from './ui/builders/compose';
+// buildGraphSurface / composeSurfaces 暂时不用：图谱走时间轴（data-graph）渲染，
+// 结果区不再重复画。两者保留在 ui/builders/ 里，供将来「多图谱对比」这类结果区编排使用。
 
 /** 引用来源（工具登记时不含 index，finalSources 统一编号） */
 type AiSourceDraft = Omit<AiSource, 'index'>;
@@ -368,25 +368,30 @@ export class AiAgentService {
       }
 
       /**
-       * 生成式 UI 切片：知识卡片与图谱卡片**组合成一份**下发。
+       * 图谱走**时间轴**（data-graph），不走结果区 surface。
        *
-       * 分两次发是错的 —— surface 语义是覆盖式，后一次会把前一次整块替换，
-       * 用户会看到卡片闪一下就变样（见 ui/builders/compose.ts 顶部说明）。
+       * 时间轴的图谱项本身就是完整展示（可折叠：mini 力导图 + 关系三元组列表），
+       * 再往结果区放一份 graphMini 就是同一张图画两遍。`graphMini` 组件保留在
+       * catalog 里备用（例如将来要做「多图谱对比」这类结果区编排）。
        */
-      const preSurfaceParts: Surface[] = [];
-      if (kbHit.items.length > 0) {
-        preSurfaceParts.push(
-          buildKnowledgeSurface({ query: plan.rewrittenQuery, items: kbHit.items }),
-        );
-      }
       if (kgMeaningful) {
-        preSurfaceParts.push(
-          buildGraphSurface({ entities: kgEntities, relations: kgRelations }),
-        );
+        this.emit(res, 'data-graph', {
+          query: plan.rewrittenQuery,
+          entities: kgEntities,
+          relations: kgRelations,
+        });
       }
-      if (preSurfaceParts.length > 0) {
+
+      /**
+       * 生成式 UI 切片：前置检索命中是**最常走的路径**，必须与工具路径一样下发界面蓝图，
+       * 否则用户看到的卡片只在「工具调用」分支出现，而绝大多数提问在那之前就已命中。
+       */
+      if (kbHit.items.length > 0) {
         surfaceToPersist =
-          this.emitSurface(res, composeSurfaces(preSurfaceParts)) ?? surfaceToPersist;
+          this.emitSurface(
+            res,
+            buildKnowledgeSurface({ query: plan.rewrittenQuery, items: kbHit.items }),
+          ) ?? surfaceToPersist;
       }
       if (memHits.length > 0) {
         this.emit(res, 'data-memory', {
@@ -757,16 +762,12 @@ export class AiAgentService {
             } else if (name === 'retrieve_graph') {
               // 降级（服务不可用）不下发事件，前端时间线不出现图谱卡
               if (!out.degraded) {
-                const entities = out.entities ?? [];
-                const relations = out.relations ?? [];
+                // 只走时间轴（data-graph），不进结果区 surface —— 同一张图不画两遍
                 this.emit(res, 'data-graph', {
                   query,
-                  entities,
-                  relations,
+                  entities: out.entities ?? [],
+                  relations: out.relations ?? [],
                 });
-                surfaceToPersist =
-                  this.emitSurface(res, buildGraphSurface({ entities, relations })) ??
-                  surfaceToPersist;
               }
             }
             messages.push(
