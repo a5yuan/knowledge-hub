@@ -2,9 +2,10 @@
 import { computed, ref } from 'vue'
 import { ChatDotRound, Delete, Promotion, Refresh } from '@element-plus/icons-vue'
 import MarkdownView from '@/components/markdown/MarkdownView.vue'
+import SurfaceRenderer from '@/components/surface/SurfaceRenderer.vue'
 import AiProcessTimeline from './AiProcessTimeline.vue'
 import type { AiTimelineItem } from './AiProcessTimeline.vue'
-import type { AiMessageView, AiSource } from '@/api/ai'
+import type { AiMessageView, AiSource, Surface } from '@/api/ai'
 
 export type { AiTimelineItem }
 
@@ -24,6 +25,8 @@ const props = defineProps<{
   statusText: string
   streamText: string
   streamSources: AiSource[]
+  /** 生成式 UI：本轮界面蓝图；null 表示后端未下发（校验失败/无检索），此时退回旧渲染 */
+  streamSurface: Surface | null
   streamError: string
   suggestions: string[]
 }>()
@@ -74,6 +77,17 @@ const lastAiIdx = computed(() => {
   return -1
 })
 
+/**
+ * 某条消息该渲染哪份界面蓝图：
+ * - 历史消息 → 用落库的 `m.surface`（genui 方案 A，刷新/切会话后仍能还原卡片）
+ * - 最后一轮 → 回落到流式期间内存里的 `streamSurface`（消息刚落库、列表尚未重拉）
+ */
+function surfaceFor(m: AiMessageView, i: number): Surface | null {
+  if (m.surface) return m.surface
+  if (i === lastAiIdx.value) return props.streamSurface
+  return null
+}
+
 /** 文件类型图标色（按扩展名猜测，简化版引用卡片；12 号：graph 紫色对齐全景图谱标签色） */
 function sourceIconColor(s: AiSource): string {
   if (s.kind === 'web') return '#6366f1'
@@ -121,6 +135,8 @@ defineExpose({ input })
             <!-- 完成态过程时间线（回答上方，卡片可展开回看） -->
             <AiProcessTimeline v-if="!streaming && i === lastAiIdx && hasProcess" :streaming="false" :items="timeline"
               :status-text="statusText" />
+            <!-- 生成式 UI 结果区：挂在最后一条回答上，与时间线的处理方式保持一致 -->
+            <SurfaceRenderer v-if="!streaming && surfaceFor(m, i)" :surface="surfaceFor(m, i)!" />
             <MarkdownView :source="m.content || '（未生成内容）'" />
             <div v-if="m.sources && m.sources.length" class="source-box">
               <div class="source-title">引用来源（{{ m.sources.length }}）</div>
@@ -151,6 +167,8 @@ defineExpose({ input })
         </div>
         <div class="bubble ai-bubble process-bubble">
           <AiProcessTimeline :streaming="true" :items="timeline" :status-text="statusText" />
+          <!-- 生成式 UI 结果区：检索完成即出现，正文随后流式补充（先给依据、再给答案） -->
+          <SurfaceRenderer v-if="streamSurface" :surface="streamSurface" />
           <MarkdownView v-if="streamText" :source="streamText" />
           <span v-if="!streamText && !hasProcess" class="thinking">正在思考…</span>
         </div>

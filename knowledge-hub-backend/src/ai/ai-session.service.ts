@@ -7,6 +7,7 @@ import { KhAiSession } from './entities/ai-session.entity';
 import { KhAiMessage } from './entities/ai-message.entity';
 import { Mem0Service } from './mem0.service';
 import { chatWindowKeys } from './memory-keys';
+import type { Surface } from './ui/surface';
 
 /** 会话视图（列表/详情返回 camelCase） */
 export interface AiSessionView {
@@ -33,6 +34,8 @@ export interface AiMessageView {
   role: 'user' | 'assistant';
   content: string;
   sources: AiSourceV2[] | null;
+  /** 生成式 UI 蓝图（genui 方案 A：从 kh_ai_message.surfaces 读出；无则为 null） */
+  surface: Surface | null;
   createdAt: string;
 }
 
@@ -119,18 +122,20 @@ export class AiSessionService {
         role: r.role as 'user' | 'assistant',
         content: r.content,
         sources: (r.sources as AiMessageView['sources']) ?? null,
+        surface: (r.surfaces as Surface | null) ?? null,
         createdAt: r.created_at.toISOString(),
       })),
     };
   }
 
-  /** 追加消息（user / assistant 通用） */
+  /** 追加消息（user / assistant 通用）；surface 仅 assistant 有，落库供回放还原卡片 */
   async appendMessage(
     sessionId: string,
     userId: string,
     role: 'user' | 'assistant',
     content: string,
     sources?: AiSourceV2[],
+    surface?: Surface | null,
   ): Promise<void> {
     await this.assertOwned(sessionId, userId);
     await this.messageRepo.save(
@@ -140,6 +145,7 @@ export class AiSessionService {
         role,
         content,
         sources: sources ?? null,
+        surfaces: surface ?? null,
       }),
     );
     // 刷新会话 updated_at（列表按最近活跃排序）

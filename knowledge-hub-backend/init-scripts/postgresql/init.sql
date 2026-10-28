@@ -254,6 +254,9 @@ CREATE TABLE IF NOT EXISTS kh_ai_message (
     role VARCHAR(16) NOT NULL,
     content TEXT NOT NULL,
     sources JSONB,
+    -- 生成式 UI 界面蓝图（genui 方案 A：落库，回放时原样还原卡片）
+    -- 结构见 src/ai/ui/surface.ts 的 Surface；校验失败时为空
+    surfaces JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_kh_ai_message_session_id

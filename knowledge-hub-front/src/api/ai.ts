@@ -27,7 +27,37 @@ export interface AiMessageView {
   role: 'user' | 'assistant'
   content: string
   sources: AiSource[] | null
+  /**
+   * 生成式 UI 蓝图（genui 方案 A：随消息落库）。
+   * 回放时直接用它还原卡片；为 null 表示该消息没有结构化结果或当时校验失败。
+   */
+  surface: Surface | null
   createdAt: string
+}
+
+/** —— surface：Agent 输出的界面蓝图（生成式 UI，见 docs/engineering/genui-surface.md） —— */
+
+/**
+ * 单个界面节点。
+ * 扁平存储：`children` 只存 id，真正的节点在 `Surface.nodes` 里查。
+ * 这样校验一次遍历就够，将来做增量更新也能按 id 直接命中。
+ */
+export interface SurfaceNode {
+  /** catalog 中的组件 id；前端 registry.ts 是唯一白名单 */
+  type: string
+  props?: Record<string, unknown>
+  /** 子节点 id 列表，顺序即渲染顺序 */
+  children?: string[]
+}
+
+/** 一次界面输出的完整描述 */
+export interface Surface {
+  /** 仅作渲染 key，无业务语义 */
+  surfaceId: string
+  root: string
+  nodes: Record<string, SurfaceNode>
+  /** 共享数据（MVP 未启用，P1 供多个组件引用同一批数据时用） */
+  data?: Record<string, unknown>
 }
 
 /** —— v2 事件载荷（单通道 data: {"type","data"}，所有字段统一嵌套在 data 内） —— */
@@ -61,6 +91,8 @@ export interface AiEventData {
     delta?: string
     // data-sources（工单 11：仅被 [n] 引用的来源；后端无标记时回退全量）
     sources?: AiSource[]
+    // data-surface（生成式 UI：界面蓝图；校验失败时后端不下发，前端回退旧分支）
+    surface?: Surface
     // finish
     suggestions?: string[]
     // error
@@ -90,6 +122,8 @@ export interface AiStreamHandlers {
   onReasoningEnd?: (data: { id: string }) => void
   onTextDelta?: (data: { id: string; delta: string }) => void
   onSources?: (data: { sources: AiSource[] }) => void
+  /** 生成式 UI：界面蓝图（与 onRetrieve 双写期并存，消费方优先用 surface） */
+  onSurface?: (data: { surface: Surface }) => void
   onFinish?: (data: { messageId: string; suggestions: string[] }) => void
   onError?: (data: { message: string }) => void
 }
@@ -217,6 +251,10 @@ export async function streamChat(
         break
       case 'data-sources':
         handlers.onSources?.({ sources: d.sources ?? [] })
+        break
+      case 'data-surface':
+        // 后端校验不通过时不会下发该事件，所以这里拿到的一定是裁剪干净的 surface
+        if (d.surface) handlers.onSurface?.({ surface: d.surface })
         break
       case 'finish':
         handlers.onFinish?.({ messageId: d.messageId ?? '', suggestions: d.suggestions ?? [] })

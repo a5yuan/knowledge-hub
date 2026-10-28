@@ -36,6 +36,10 @@ import {
   stripCitationMarkers,
 } from './citation';
 import { shouldForceRetrieve } from './force-retrieve';
+// 生成式 UI：Agent 输出界面蓝图（详见 docs/engineering/genui-surface.md）
+import { CATALOG } from './ui/catalog';
+import { validateSurface, type Surface } from './ui/surface';
+import { buildKnowledgeSurface } from './ui/builders/knowledge';
 
 /** 引用来源（工具登记时不含 index，finalSources 统一编号） */
 type AiSourceDraft = Omit<AiSource, 'index'>;
@@ -51,6 +55,8 @@ export type AiStreamEvent =
   | 'data-retrieve'
   | 'data-web-search'
   | 'data-graph'
+  /** 生成式 UI：surface 骨架（与 data-* 双写期并存，前端优先读 surface、回退旧分支） */
+  | 'data-surface'
   | 'reasoning-start'
   | 'reasoning-delta'
   | 'reasoning-end'
@@ -249,6 +255,9 @@ export class AiAgentService {
 
       // 引用登记闭包（前置管线与工具共用，finalSources 统一编号）
       const sources: AiSourceDraft[] = [];
+      // 本轮最终界面蓝图：前置检索与工具路径都可能产出，以最后一次通过校验的为准，
+      // 收尾时随消息落库（回放靠它还原卡片，见 docs/engineering/genui-surface.md §5.2）
+      let surfaceToPersist: Surface | null = null;
 
       // 3. 阶段1 意图路由 Planner（11 号工单：五类意图 + 建议检索词 + 工具门控；降级默认挂知识库）
       this.emit(res, 'data-status', { stage: 'plan', text: '识别意图...' });
@@ -293,11 +302,19 @@ export class AiAgentService {
           : Promise.resolve({ items: [], text: '' }),
         this.mem0.search(params.content, userId, sessionId),
       ]);
-      if (kbHit.items.length > 0)
+      if (kbHit.items.length > 0) {
         this.emit(res, 'data-retrieve', {
           query: plan.rewrittenQuery,
           items: kbHit.items,
         });
+        // 生成式 UI 切片：前置检索命中是**最常走的路径**，必须与工具路径一样下发界面蓝图，
+        // 否则用户看到的卡片只在「工具调用」分支出现，而绝大多数提问在那之前就已命中。
+        surfaceToPersist =
+          this.emitSurface(
+            res,
+            buildKnowledgeSurface({ query: plan.rewrittenQuery, items: kbHit.items }),
+          ) ?? surfaceToPersist;
+      }
       if (memHits.length > 0) {
         this.emit(res, 'data-memory', {
           memories: memHits.map((m) => ({ layer: m.layer, text: m.text })),
@@ -646,6 +663,11 @@ export class AiAgentService {
                 return true;
               });
               this.emit(res, 'data-retrieve', { query, items });
+              // 生成式 UI 切片：同一份数据额外下发一份界面蓝图。
+              // 双写期前端优先读 surface，旧事件保留给未迁移的消费方（AiProcessTimeline）。
+              surfaceToPersist =
+                this.emitSurface(res, buildKnowledgeSurface({ query, items })) ??
+                surfaceToPersist;
             } else if (name === 'web_search') {
               this.emit(res, 'data-web-search', {
                 query,
@@ -753,6 +775,7 @@ export class AiAgentService {
         'assistant',
         finalAnswer,
         finalSources,
+        surfaceToPersist,
       );
       const evicted = await this.memoryCache.writeBack(userId, sessionId, {
         role: 'assistant',
@@ -1439,5 +1462,34 @@ grade 取值：
     data: Record<string, unknown>,
   ): void {
     res.write(`data: ${JSON.stringify({ type, data })}\n\n`);
+  }
+
+  /**
+   * 下发 surface（生成式 UI 的界面蓝图）。
+   *
+   * 校验不通过时**静默降级**：只记 warn，不阻塞对话，也不下发半个界面。
+   * 前端在这种情况下退回旧 data-* 分支，用户看到的东西不会比改造前少。
+   */
+  private emitSurface(res: Response, surface: Surface): Surface | null {
+    const result = validateSurface(surface, CATALOG);
+    if (!result.ok || !result.surface) {
+      this.logger.warn(
+        `surface 校验失败，降级为旧事件渲染: ${result.dropped
+          .map((d) => `${d.id}(${d.reason})`)
+          .join('; ')}`,
+      );
+      return null;
+    }
+    if (result.dropped.length > 0) {
+      // 局部丢弃：父级继续渲染，只少了坏掉的子树
+      this.logger.warn(
+        `surface 部分节点被丢弃: ${result.dropped
+          .map((d) => `${d.id}(${d.reason})`)
+          .join('; ')}`,
+      );
+    }
+    this.emit(res, 'data-surface', { surface: result.surface });
+    // 返回已校验的成品：调用方据此决定是否随消息落库（坏 surface 不写库）
+    return result.surface;
   }
 }

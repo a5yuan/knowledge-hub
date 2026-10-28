@@ -12,6 +12,7 @@ import {
   type AiMessageView,
   type AiSessionView,
   type AiSource,
+  type Surface,
 } from '@/api/ai'
 
 /**
@@ -61,6 +62,7 @@ async function onSelectSession(id: string): Promise<void> {
     messages.value = res.messages
     suggestions.value = []
     timeline.value = []
+    streamSurface.value = null
     statusText.value = ''
   } catch {
     ElMessage.warning('会话消息加载失败')
@@ -84,6 +86,7 @@ async function onClear(): Promise<void> {
     messages.value = []
     suggestions.value = []
     timeline.value = []
+    streamSurface.value = null
     statusText.value = ''
     ElMessage.success('对话已清空')
     void refreshSessions()
@@ -117,6 +120,8 @@ const streamText = ref('')
 const timeline = ref<AiTimelineItem[]>([])
 const statusText = ref('')
 const streamSources = ref<AiSource[]>([])
+/** 生成式 UI：本轮对话的界面蓝图（与 timeline 双写期并存，surface 优先） */
+const streamSurface = ref<Surface | null>(null)
 const streamError = ref('')
 const suggestions = ref<string[]>([])
 let abortController: AbortController | null = null
@@ -133,6 +138,7 @@ async function onSend(text: string): Promise<void> {
   statusText.value = ''
   activeReasoning = null
   streamSources.value = []
+  streamSurface.value = null
   streamError.value = ''
   // 乐观插入 user 消息
   messages.value.push({
@@ -140,6 +146,7 @@ async function onSend(text: string): Promise<void> {
     role: 'user',
     content: text,
     sources: null,
+    surface: null,
     createdAt: new Date().toISOString(),
   })
 
@@ -217,6 +224,11 @@ async function onSend(text: string): Promise<void> {
         onSources: (d) => {
           streamSources.value = d.sources
         },
+        onSurface: (d) => {
+          // 覆盖式赋值：一轮对话只展示最后一份蓝图（检索可能发生多次，以最后一次为准）
+          streamSurface.value = d.surface
+          void nextTick(scrollBottom)
+        },
         onFinish: (d) => {
           suggestions.value = d.suggestions ?? []
         },
@@ -238,6 +250,8 @@ async function onSend(text: string): Promise<void> {
         role: 'assistant',
         content: streamText.value || streamError.value,
         sources: streamSources.value.length ? streamSources.value : null,
+        // 带上本轮蓝图：与后端落库值一致，避免「刚答完」与「重新拉取后」渲染路径不同
+        surface: streamSurface.value,
         createdAt: new Date().toISOString(),
       })
     }
@@ -303,8 +317,8 @@ onBeforeUnmount(() => {
       <template v-if="navActive === 'history'">
         <AiChatPanel ref="chatPanelRef" :session-title="activeTitle" :messages="messages" :streaming="streaming"
           :timeline="timeline" :status-text="statusText" :stream-text="streamText" :stream-sources="streamSources"
-          :stream-error="streamError" :suggestions="suggestions" @send="onSend" @clear="onClear"
-          @suggestion="onSuggestion" @stop="onStop" />
+          :stream-surface="streamSurface" :stream-error="streamError" :suggestions="suggestions" @send="onSend"
+          @clear="onClear" @suggestion="onSuggestion" @stop="onStop" />
       </template>
 
       <template v-else-if="navActive === 'records'">

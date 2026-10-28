@@ -33,6 +33,14 @@ export class KhAiMessage {
   @Column({ type: 'jsonb', nullable: true })
   sources: unknown;
 
+  /**
+   * 生成式 UI 界面蓝图 JSONB（结构见 src/ai/ui/surface.ts 的 Surface）。
+   * 落库而非回放时重建：sources 是累积去重的、surface 是"最后一次检索"的快照，
+   * 用 sources 重建会在多轮检索时多出条目（详见 docs/engineering/genui-surface.md §5.2）。
+   */
+  @Column({ type: 'jsonb', nullable: true })
+  surfaces: unknown;
+
   @CreateDateColumn({ type: 'timestamp' })
   created_at: Date;
 }
