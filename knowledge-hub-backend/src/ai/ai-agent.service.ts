@@ -11,7 +11,7 @@ import {
 import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { RagSearchService } from '../rag/rag-search.service';
-import { KgService } from '../kg/kg.service';
+import { KgService, type KgEdgeRow, type KgEntityHit } from '../kg/kg.service';
 import type { VisibilityScope } from '../es/visibility-scope';
 import { AiSessionService, AiSourceV2 as AiSource } from './ai-session.service';
 import { MemoryCacheService } from './memory-cache.service';
@@ -42,6 +42,7 @@ import { validateSurface, type Surface } from './ui/surface';
 import { buildKnowledgeSurface } from './ui/builders/knowledge';
 import { buildWebSurface } from './ui/builders/web';
 import { buildGraphSurface } from './ui/builders/graph';
+import { composeSurfaces } from './ui/builders/compose';
 
 /** 引用来源（工具登记时不含 index，finalSources 统一编号） */
 type AiSourceDraft = Omit<AiSource, 'index'>;
@@ -287,12 +288,16 @@ export class AiAgentService {
         plan.intent === 'knowledge' || plan.intent === 'knowledge_then_web';
       const shouldRetrieveKb =
         intentAllowsKb && plan.needRetrieve && !plan.isChitchat;
+      // 门控打点：调「为什么没检索/没查图谱」时先看这行
+      this.logger.log(
+        `门控 intent=${plan.intent} needRetrieve=${plan.needRetrieve} isChitchat=${plan.isChitchat} 预检索=${shouldRetrieveKb} terms=[${plan.suggestedTerms.join(', ')}]`,
+      );
       if (this.mem0.available)
         this.emit(res, 'data-status', {
           stage: 'memory',
           text: '回忆相关记忆...',
         });
-      const [kbHit, memHits] = await Promise.all([
+      const [kbHit, memHits, kgPre] = await Promise.all([
         shouldRetrieveKb
           ? this.pipelineKbSearch(
               res,
@@ -303,19 +308,85 @@ export class AiAgentService {
             )
           : Promise.resolve({ items: [], text: '' }),
         this.mem0.search(params.content, userId, sessionId),
+        /**
+         * 图谱预检（12 号工单 retrieve_graph 的前置补充）。
+         *
+         * 为什么前置而不是靠模型调工具：预检索一旦命中，模型手里已有整段原文，
+         * 实测 3/3 个关系型提问都不会再主动调 `retrieve_graph`（见
+         * docs/engineering/genui-surface.md §八「图谱路径触发率」）——
+         * 免费资料到手后没人会额外花一次工具调用。
+         *
+         * 与知识库检索**并行**，不增加首屏延迟；任何失败一律降级为空，绝不影响主链路。
+         */
+        /**
+         * 图谱预检（12 号工单 `retrieve_graph` 的前置补充）。
+         *
+         * 条件**故意不绑 `needRetrieve`**：`needRetrieve` 回答的是「要不要查知识库」，
+         * 而实测 planner 对「高炉炼铁涉及哪些技术」这类问题会判 needRetrieve=false
+         * （它以为凭通用知识就能答），导致知识库和图谱双双被跳过 —— 可图谱里明明有「高炉」。
+         *
+         * 图谱查询是本地 Cypher、毫秒级，且后面还有「≥2 实体 + ≥1 关系」的门槛过滤噪音，
+         * 所以只要意图允许知识库就查，与 needRetrieve 无关。
+         */
+        intentAllowsKb && !plan.isChitchat
+          ? this.preSearchGraph(plan.suggestedTerms, plan.rewrittenQuery)
+          : Promise.resolve({
+              entities: [] as KgEntityHit[],
+              edges: [] as KgEdgeRow[],
+            }),
       ]);
+      // ── 图谱预检结果映射（与 tools/retrieve-graph.ts 的映射保持一致）──
+      const kgEntities = kgPre.entities.map((e) => ({
+        name: e.name,
+        type: e.type,
+        ...(e.description ? { description: e.description } : {}),
+      }));
+      const kgRelations = kgPre.edges.map((e) => ({
+        source: e.sourceName,
+        relation: e.relation,
+        target: e.targetName,
+      }));
+      // 只有「有意义的子图」才并入：零散单实体 / 无关系对回答没帮助，只会让卡片变噪音
+      const kgMeaningful = kgEntities.length >= 2 && kgRelations.length >= 1;
+      // 预检结果打点：触发率调优全靠这行日志（生产可降级 debug）
+      this.logger.log(
+        `图谱预检 q="${plan.rewrittenQuery}" 实体=${kgEntities.length} 关系=${kgRelations.length} 并入=${kgMeaningful}`,
+      );
+      /** 注入上下文的关系文本：让模型真的用上图谱，而不是只在界面上画一下 */
+      const graphText = kgMeaningful
+        ? `【知识图谱关联】\n${kgRelations
+            .slice(0, 10)
+            .map((r) => `${r.source} —${r.relation}→ ${r.target}`)
+            .join('\n')}`
+        : '';
+
       if (kbHit.items.length > 0) {
         this.emit(res, 'data-retrieve', {
           query: plan.rewrittenQuery,
           items: kbHit.items,
         });
-        // 生成式 UI 切片：前置检索命中是**最常走的路径**，必须与工具路径一样下发界面蓝图，
-        // 否则用户看到的卡片只在「工具调用」分支出现，而绝大多数提问在那之前就已命中。
+      }
+
+      /**
+       * 生成式 UI 切片：知识卡片与图谱卡片**组合成一份**下发。
+       *
+       * 分两次发是错的 —— surface 语义是覆盖式，后一次会把前一次整块替换，
+       * 用户会看到卡片闪一下就变样（见 ui/builders/compose.ts 顶部说明）。
+       */
+      const preSurfaceParts: Surface[] = [];
+      if (kbHit.items.length > 0) {
+        preSurfaceParts.push(
+          buildKnowledgeSurface({ query: plan.rewrittenQuery, items: kbHit.items }),
+        );
+      }
+      if (kgMeaningful) {
+        preSurfaceParts.push(
+          buildGraphSurface({ entities: kgEntities, relations: kgRelations }),
+        );
+      }
+      if (preSurfaceParts.length > 0) {
         surfaceToPersist =
-          this.emitSurface(
-            res,
-            buildKnowledgeSurface({ query: plan.rewrittenQuery, items: kbHit.items }),
-          ) ?? surfaceToPersist;
+          this.emitSurface(res, composeSurfaces(preSurfaceParts)) ?? surfaceToPersist;
       }
       if (memHits.length > 0) {
         this.emit(res, 'data-memory', {
@@ -407,7 +478,7 @@ export class AiAgentService {
           this.buildSystemContext(
             memHits,
             summary,
-            kbHit.text || forcedRetrieveText,
+            [kbHit.text || forcedRetrieveText, graphText].filter(Boolean).join('\n\n'),
             plan.intent,
           ),
         ),
@@ -960,9 +1031,65 @@ export class AiAgentService {
     }
   }
 
+  /**
+   * 图谱预检（12 号工单 `retrieve_graph` 的前置补充）。
+   *
+   * **为什么不能拿整句查**：`KgService.searchGraph` 的 Cypher 是
+   * `toLower(e.name) CONTAINS toLower($q)` —— 判断「实体名是否包含查询词」。
+   * 传「高炉炼铁涉及哪些技术」永远匹配不到名为「高炉」的实体（2026-10-28 实测实体=0）。
+   * 图谱工具平时能用，是因为模型给它的本来就是短词。
+   *
+   * 所以用 planner 产出的 `suggestedTerms` 逐个查，按实体名 / 三元组去重合并。
+   * 任一词失败不影响其它；整体失败由调用方 catch 降级为空。
+   */
+  private async preSearchGraph(
+    terms: string[],
+    fallbackQuery: string,
+  ): Promise<{ entities: KgEntityHit[]; edges: KgEdgeRow[] }> {
+    const raw = terms.length > 0 ? terms : [fallbackQuery];
+    /**
+     * 词表扩展：中文复合词再取前 2 字。
+     *
+     * 图谱是 `实体名 CONTAINS 查询词`，而 planner 给的是「高炉炼铁 / 炼铁技术 / 冶金工艺」
+     * 这类复合词 —— 实体名「高炉」并不包含「高炉炼铁」，于是明明有数据也查不到
+     * （2026-10-28 实测：复合词 0 命中，拆出「高炉」后命中）。
+     * 噪音由后面的「≥2 实体 + ≥1 关系」门槛过滤。
+     */
+    const expanded = new Set<string>();
+    for (const t of raw) {
+      const term = t.trim();
+      if (!term) continue;
+      expanded.add(term);
+      if (term.length >= 3) expanded.add(term.slice(0, 2));
+    }
+    const queries = [...expanded].slice(0, 6);
+
+    const results = await Promise.all(
+      queries.map((q) =>
+        this.kg.searchGraph(q, undefined, 8).catch(() => ({
+          entities: [] as KgEntityHit[],
+          edges: [] as KgEdgeRow[],
+          docEdges: [],
+        })),
+      ),
+    );
+
+    const entMap = new Map<string, KgEntityHit>();
+    const edgeMap = new Map<string, KgEdgeRow>();
+    for (const r of results) {
+      for (const e of r.entities) entMap.set(e.name, e);
+      for (const e of r.edges) {
+        edgeMap.set(`${e.sourceName}|${e.relation}|${e.targetName}`, e);
+      }
+    }
+    this.logger.log(
+      `图谱预检 terms=[${queries.join(', ')}] → 实体=${entMap.size} 关系=${edgeMap.size}`,
+    );
+    return { entities: [...entMap.values()], edges: [...edgeMap.values()] };
+  }
+
   /** 阶段1 工具门控（11 号工单；12 号：kb 类意图补挂 retrieve_graph）——按五类意图决定本轮可用工具集 */
-  private toolsForIntent(intent: AgentIntent): string[] {
-    switch (intent) {
+  private toolsForIntent(intent: AgentIntent): string[] {    switch (intent) {
       case 'chitchat':
       case 'preference':
         return [];
