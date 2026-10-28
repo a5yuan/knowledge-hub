@@ -275,6 +275,74 @@ export class KgService {
   }
 
   /**
+   * 按文档取实体子图（供 AI 对话的前置图谱预检使用）。
+   *
+   * **为什么不用 `searchGraph(q)`**：那是全库按「实体名 CONTAINS 查询词」匹配，
+   * 短词会命中大量跨概念实体（2026-10-28 实测「生产」→ 安全生产 / 智能生产 /
+   * 生产制造，噪音率 4/5）。本方法把范围限定在**已命中文档提及的实体**内 ——
+   * 相关性由文档检索（BM25 + rerank）保证，图谱只负责展开关系。
+   *
+   * `toString(d.docId)`：兼容 docId 存成数字的历史数据（新数据是字符串）。
+   */
+  async getSubgraphByDocIds(
+    docIds: string[],
+    limit: number,
+  ): Promise<{ entities: KgEntityHit[]; edges: KgEdgeRow[] }> {
+    if (docIds.length === 0) return { entities: [], edges: [] };
+    const lim = BigInt(limit);
+
+    // ① 种子实体：这些文档提及的实体
+    const seeds = (await this.neo4j.runRead(
+      `MATCH (d:Document)-[:HAS_CHUNK]->(:Chunk)-[:MENTIONS]->(e:Entity)
+       WHERE toString(d.docId) IN $docIds
+       RETURN DISTINCT e.name AS name, e.type AS type, e.description AS description
+       ORDER BY name LIMIT $limit`,
+      { docIds, limit: lim },
+    )) as unknown as KgEntityHit[];
+
+    const names = seeds.map((e) => e.name);
+    if (names.length === 0) return { entities: [], edges: [] };
+
+    /**
+     * ② 关系：从种子**向外一跳**取边，而不是只找种子之间的边。
+     *
+     * 踩过的坑：一开始写 `a.name IN $names AND b.name IN $names`，实测
+     * 「docs=5 → 实体=20 关系=0」—— 5 篇文档主题各异（钢铁 / 考勤 / 立项），
+     * 它们的实体互相孤立，内部根本无边。关系必须允许一端在种子之外。
+     */
+    const edges = (await this.neo4j.runRead(
+      `MATCH (a:Entity)-[r:RELATED_TO]->(b:Entity)
+       WHERE a.name IN $names OR b.name IN $names
+       RETURN a.name AS sourceName, a.type AS sourceType, r.relation AS relation,
+              b.name AS targetName, b.type AS targetType
+       ORDER BY relation, sourceName LIMIT $limit`,
+      { names, limit: lim },
+    )) as unknown as KgEdgeRow[];
+
+    // ③ 边端点也是图上的节点：补进 entities，否则前端画不出这些边
+    const entMap = new Map<string, KgEntityHit>();
+    for (const e of seeds) entMap.set(e.name, e);
+    for (const r of edges) {
+      if (!entMap.has(r.sourceName)) {
+        entMap.set(r.sourceName, {
+          name: r.sourceName,
+          type: r.sourceType,
+          description: null,
+        });
+      }
+      if (!entMap.has(r.targetName)) {
+        entMap.set(r.targetName, {
+          name: r.targetName,
+          type: r.targetType,
+          description: null,
+        });
+      }
+    }
+
+    return { entities: [...entMap.values()], edges };
+  }
+
+  /**
    * ⓪ 全景图谱总览（二期工单 07）：全量节点/边 + 统计 + 类型分布 + 热点 TOP5
    * 不含 Chunk/HAS_CHUNK 层；mentions 边为 Document↔Entity 按 (docId, entity) 去重的直连边
    */

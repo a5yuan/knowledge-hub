@@ -297,7 +297,7 @@ export class AiAgentService {
           stage: 'memory',
           text: '回忆相关记忆...',
         });
-      const [kbHit, memHits, kgPre] = await Promise.all([
+      const [kbHit, memHits] = await Promise.all([
         shouldRetrieveKb
           ? this.pipelineKbSearch(
               res,
@@ -308,33 +308,32 @@ export class AiAgentService {
             )
           : Promise.resolve({ items: [], text: '' }),
         this.mem0.search(params.content, userId, sessionId),
-        /**
-         * 图谱预检（12 号工单 retrieve_graph 的前置补充）。
-         *
-         * 为什么前置而不是靠模型调工具：预检索一旦命中，模型手里已有整段原文，
-         * 实测 3/3 个关系型提问都不会再主动调 `retrieve_graph`（见
-         * docs/engineering/genui-surface.md §八「图谱路径触发率」）——
-         * 免费资料到手后没人会额外花一次工具调用。
-         *
-         * 与知识库检索**并行**，不增加首屏延迟；任何失败一律降级为空，绝不影响主链路。
-         */
-        /**
-         * 图谱预检（12 号工单 `retrieve_graph` 的前置补充）。
-         *
-         * 条件**故意不绑 `needRetrieve`**：`needRetrieve` 回答的是「要不要查知识库」，
-         * 而实测 planner 对「高炉炼铁涉及哪些技术」这类问题会判 needRetrieve=false
-         * （它以为凭通用知识就能答），导致知识库和图谱双双被跳过 —— 可图谱里明明有「高炉」。
-         *
-         * 图谱查询是本地 Cypher、毫秒级，且后面还有「≥2 实体 + ≥1 关系」的门槛过滤噪音，
-         * 所以只要意图允许知识库就查，与 needRetrieve 无关。
-         */
-        intentAllowsKb && !plan.isChitchat
-          ? this.preSearchGraph(plan.suggestedTerms, plan.rewrittenQuery)
-          : Promise.resolve({
-              entities: [] as KgEntityHit[],
-              edges: [] as KgEdgeRow[],
-            }),
       ]);
+
+      /**
+       * 图谱预检（12 号工单 `retrieve_graph` 的前置补充）。
+       *
+       * **为什么由代码代查而不是靠模型调工具**：预检索一旦命中，模型手里已有整段原文，
+       * 实测 3/3 个关系型提问都不会再主动调 `retrieve_graph` —— 免费资料到手后
+       * 没人会额外花一次工具调用。
+       *
+       * **为什么串行在知识库检索之后**：要拿 `kbHit` 的 documentId 限定子图范围
+       * （方案 C，见 preSearchGraph 注释）。代价是本地 Neo4j 一次查询（几十毫秒），
+       * 换来的是零短词噪音 —— 按实体名全库搜「生产」会命中安全生产/智能生产/生产制造。
+       *
+       * **为什么条件不绑 `needRetrieve`**：它回答的是「要不要查知识库」，而实测
+       * planner 对「高炉炼铁涉及哪些技术」判 needRetrieve=false（以为凭通用知识就能答），
+       * 会让知识库和图谱双双被跳过 —— 可图谱里明明有「高炉」。图谱查询便宜，
+       * 且后面还有「≥2 实体 + ≥1 关系」门槛过滤噪音。
+       */
+      const kgPre =
+        intentAllowsKb && !plan.isChitchat
+          ? await this.preSearchGraph(
+              kbHit.items.map((it) => it.documentId),
+              plan.suggestedTerms,
+              plan.rewrittenQuery,
+            )
+          : { entities: [] as KgEntityHit[], edges: [] as KgEdgeRow[] };
       // ── 图谱预检结果映射（与 tools/retrieve-graph.ts 的映射保持一致）──
       const kgEntities = kgPre.entities.map((e) => ({
         name: e.name,
@@ -1044,9 +1043,30 @@ export class AiAgentService {
    * 任一词失败不影响其它；整体失败由调用方 catch 降级为空。
    */
   private async preSearchGraph(
+    docIds: string[],
     terms: string[],
     fallbackQuery: string,
   ): Promise<{ entities: KgEntityHit[]; edges: KgEdgeRow[] }> {
+    /**
+     * 主路径：按「已命中文档」取子图。
+     *
+     * 相关性由文档检索（BM25 + rerank）保证，图谱只展开这些文档里提到的实体关系 ——
+     * 不靠猜查询词，因而没有短词噪音（实测按名字搜「生产」命中一堆跨概念实体）。
+     */
+    if (docIds.length > 0) {
+      const sub = await this.kg.getSubgraphByDocIds(docIds, 20).catch(() => null);
+      if (sub && sub.entities.length >= 2 && sub.edges.length >= 1) {
+        this.logger.log(
+          `图谱预检(按文档) docs=${docIds.length} → 实体=${sub.entities.length} 关系=${sub.edges.length}`,
+        );
+        return sub;
+      }
+      this.logger.log(
+        `图谱预检(按文档) docs=${docIds.length} → 实体=${sub?.entities.length ?? 0} 关系=${sub?.edges.length ?? 0}，转拆词兜底`,
+      );
+    }
+
+    // 兜底：文档 0 命中、或文档内没抽出实体时，退回按短词全库匹配（有噪音，但总比没有强）
     const raw = terms.length > 0 ? terms : [fallbackQuery];
     /**
      * 词表扩展：中文复合词再取前 2 字。
