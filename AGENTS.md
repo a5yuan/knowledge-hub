@@ -13,7 +13,7 @@
 | `knowledge-hub-front/` | 前端，`src/` 78 个源文件 |
 | `docs/engineering/` | **工程规范与陷阱（AI 读，本文件的二级文档）** |
 | `docs/demo/`、`docs/images/` | 演示录屏 / 讲稿 / 截图（**给人看的素材，不是文档**） |
-| `backend-integration/` | 联调层 `spec.md` + 32 份工单 —— **本地私有、已 gitignore、不在仓库里** |
+| `backend-integration/` | 联调层：`backend-integration/spec.md` + 32 份工单 —— **本地私有、已 gitignore、不在仓库里** |
 
 ⚠️ **单仓库模式**：只有根 `.git`，两个子项目直接纳入根仓库 `main` 分支。提交时不要 `cd` 进子目录以为在另一个仓库 —— `git rev-parse --show-toplevel` 一律返回根目录。
 
@@ -51,18 +51,18 @@ pnpm install && pnpm dev                     # http://localhost:5173（用 local
 | 本机怪象（代理 / 中文乱码 / 启动慢 / 容器 / lint） | `docs/engineering/pitfalls.md` §一~§二 |
 | 找设计背景（"当初为什么这么设计"） | `knowledge-hub-backend/.trae/documents/`（12 份，已入库） |
 | 找前端架构决策 | `knowledge-hub-front/docs/adr/`（0001~0006，已入库） |
-| 找历史工单 / 联调契约 | `backend-integration/issues/`、`spec.md`（**本地私有，不在仓库**） |
+| 找历史工单 / 联调契约 | `backend-integration/issues/`、`backend-integration/spec.md`（**本地私有，不在仓库**） |
 
 ## 3 静默致命红线
 
-违反后**不会立刻报错**，但后果需要人工排查才能发现。完整理由见 `code-standards.md`。
+违反后**不会立刻报错**，但后果需要人工排查才能发现。完整理由见 `docs/engineering/code-standards.md`。
 
 1. **雪花 ID 必须经 `normalizeSnowflakeId` 转字符串出参** —— 否则前端精度丢失，本地测不出
 2. **不加 Repository 抽象层、不加拦截器 / 异常过滤器 / 响应包装** —— 能跑，架构却已破
 3. **静态子路径必须声明在 `@Get(':id')` 之前** —— 否则 404，排查半天
 4. **snake_case 只允许出现在 `src/api/adapters/`** —— 视图层出现即隔离失守
 5. **前端 URL 一律经 `endpoint(resource, suffix)`** —— 不写字面量路径
-6. **写时间边界前读 `pitfalls.md` §三** —— 两套时钟基准并存（25F 完成前）
+6. **写时间边界前读 `docs/engineering/pitfalls.md` §三** —— 两套时钟基准并存（25F 完成前）
 7. **不要跑 `pnpm run lint`** —— 实测一次重排 63 个无关文件；校验用 `pnpm run build` + `pnpm test`
 
 ## 4 文档约定
