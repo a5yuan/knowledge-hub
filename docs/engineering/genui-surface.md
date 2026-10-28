@@ -436,9 +436,35 @@ export const renderUiTool = tool({
 
 **教训**：P0 原有的验收只有单测 + 编译，没有端到端断言。单测覆盖的是 `validateSurface` 的坏输入，而「事件到底有没有发到前端」这一层完全没测 —— 于是最常走的路径漏了也发现不了。
 
-### P0 铺开（待做）
+### P0 铺开（部分完成，2026-10-28）
 
-其余 4 个 builder（web / graph / memory / sources）。有了本次验证，每个约 20 行 + catalog 一条 + registry 一行。
+catalog 已扩到 7 个组件、registry 全部映射、4 个 builder 全部写好。**但下发侧只接了 3 类主形态**：
+
+| 组件 | catalog | 前端组件 | builder | 后端下发 |
+|---|---|---|---|---|
+| `stack` / `knowledgeCards` / `markdown` | ✅ | ✅ | ✅ | ✅ |
+| `webLinks` | ✅ | ✅ | ✅ | ✅ |
+| `graphMini` | ✅ | ✅（复用 `GraphCanvas` mini 模式） | ✅ | ✅ |
+| `sourceList` | ✅ | ✅ | ✅ | ❌ **有意不接** |
+| `memoryChips` | ✅ | ✅ | ✅ | ❌ **有意不接** |
+
+**为什么不接 memory / sources**：它们在**本轮最后**才下发（`data-memory` 在检索之后、`data-sources` 在 `finish` 之前）。而 surface 的语义是「覆盖式，以最后一次为准」—— 接了就会把刚出现的检索卡片**替换掉**，用户会看到卡片闪一下就变了样。
+
+它们各自的专用 UI 已经稳定（时间线里的记忆卡、正文下方的引用块），没必要搬进 surface。**能力保留**：catalog 与 registry 都已就绪。将来若要「卡片 + 来源」并列展示，正确做法是把两者**组合进同一个 surface 一次下发**，而不是发两次让后者覆盖前者。
+
+**实测（2026-10-28）**：
+
+| 问题 | surface 内组件 | 计数 |
+|---|---|---|
+| 知识库类（项目立项与审批流程） | 仅 `kc` | 命中 1 篇文档 |
+| 联网类（今天杭州天气） | 仅 `wl` | 检索到 5 条结果 |
+
+两者均无 memory / sources 覆盖，引用块仍由原有 `source-box` 渲染。
+
+### 待做
+
+- **graphMini 端到端**：代码已接，但需要图谱意图的提问才能触发，本轮未实测
+- **P1 `render_ui` 工具**（见第六节）
 
 ### P1（约 1.5 天）render_ui 工具
 

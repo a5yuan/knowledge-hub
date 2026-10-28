@@ -40,6 +40,8 @@ import { shouldForceRetrieve } from './force-retrieve';
 import { CATALOG } from './ui/catalog';
 import { validateSurface, type Surface } from './ui/surface';
 import { buildKnowledgeSurface } from './ui/builders/knowledge';
+import { buildWebSurface } from './ui/builders/web';
+import { buildGraphSurface } from './ui/builders/graph';
 
 /** 引用来源（工具登记时不含 index，finalSources 统一编号） */
 type AiSourceDraft = Omit<AiSource, 'index'>;
@@ -669,18 +671,31 @@ export class AiAgentService {
                 this.emitSurface(res, buildKnowledgeSurface({ query, items })) ??
                 surfaceToPersist;
             } else if (name === 'web_search') {
+              const results = out.results ?? [];
               this.emit(res, 'data-web-search', {
                 query,
-                results: out.results ?? [],
+                results,
               });
+              // 三种「主结果形态」互斥（知识库 / 联网 / 图谱），后到的覆盖先到的 —
+              // 与前端 onSurface 的「一轮只展示最后一份蓝图」语义一致。
+              // memory / sources 不接 surface：它们在本轮**最后**才下发，接了必然覆盖掉
+              // 主结果卡片（用户会看到卡片刚出现就被来源列表替换），而它们各自的
+              // 专用 UI（时间线记忆卡 / 正文下方引用块）已经稳定，没必要搬进 surface。
+              surfaceToPersist =
+                this.emitSurface(res, buildWebSurface({ query, results })) ?? surfaceToPersist;
             } else if (name === 'retrieve_graph') {
               // 降级（服务不可用）不下发事件，前端时间线不出现图谱卡
               if (!out.degraded) {
+                const entities = out.entities ?? [];
+                const relations = out.relations ?? [];
                 this.emit(res, 'data-graph', {
                   query,
-                  entities: out.entities ?? [],
-                  relations: out.relations ?? [],
+                  entities,
+                  relations,
                 });
+                surfaceToPersist =
+                  this.emitSurface(res, buildGraphSurface({ entities, relations })) ??
+                  surfaceToPersist;
               }
             }
             messages.push(

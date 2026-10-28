@@ -53,11 +53,102 @@ export const markdownEntry = {
   slots: false,
 } as const;
 
+/** 联网搜索结果：对应 web_search 的返回 */
+export const webLinksEntry = {
+  summary:
+    '联网搜索结果链接列表。results 每项含 title / url，最多 10 条。' +
+    '用于展示「搜到了哪些网页」，不要用它复述网页内容。',
+  props: z.object({
+    /** 实际检索词（可能是改写后的），顶部展示便于核对 */
+    query: z.string().max(200).default(''),
+    results: z
+      .array(
+        z.object({
+          title: z.string().default('（无标题）'),
+          // url 允许为空：个别结果只有标题没有链接，因一条坏数据丢整块卡片不划算
+          url: z.string().default(''),
+        }),
+      )
+      .max(10),
+  }),
+  slots: false,
+} as const;
+
+/** 知识图谱迷你图：对应 retrieve_graph 的实体与关系 */
+export const graphMiniEntry = {
+  summary:
+    '知识图谱实体关系图。entities 每项含 name / type / description，最多 20 个；' +
+    'relations 每项含 source / relation / target，最多 40 条。用于展示「实体之间怎么连」。',
+  props: z.object({
+    entities: z
+      .array(
+        z.object({
+          name: z.string().min(1),
+          type: z.string().default(''),
+          description: z.string().optional(),
+        }),
+      )
+      .max(20),
+    relations: z
+      .array(
+        z.object({
+          source: z.string().min(1),
+          relation: z.string().default(''),
+          target: z.string().min(1),
+        }),
+      )
+      .max(40),
+  }),
+  slots: false,
+} as const;
+
+/** 引用来源列表：对应 data-sources，[n] 与正文标注一一对应 */
+export const sourceListEntry = {
+  summary:
+    '编号引用来源列表。sources 每项含 index（与正文 [n] 对应）/ kind(knowledge|web|graph) / title，' +
+    '可选 ref / url / excerpt。用于「这个结论出自哪里」。',
+  props: z.object({
+    sources: z
+      .array(
+        z.object({
+          index: z.number().int().min(1),
+          kind: z.enum(['knowledge', 'web', 'graph']),
+          title: z.string().default(''),
+          ref: z.string().optional(),
+          url: z.string().optional(),
+          excerpt: z.string().optional(),
+        }),
+      )
+      .max(50),
+  }),
+  slots: false,
+} as const;
+
+/** 记忆要点：对应 data-memory，展示「这次回答用到了哪些记忆」 */
+export const memoryChipsEntry = {
+  summary: '命中的记忆要点，最多 3 条，每条含 layer(user|session) 与 text。',
+  props: z.object({
+    memories: z
+      .array(
+        z.object({
+          layer: z.enum(['user', 'session']),
+          text: z.string().max(200),
+        }),
+      )
+      .max(3),
+  }),
+  slots: false,
+} as const;
+
 /** 组件目录：key 即 SurfaceNode.type 的合法取值 */
 export const CATALOG: Catalog = {
   stack: stackEntry,
   knowledgeCards: knowledgeCardsEntry,
   markdown: markdownEntry,
+  webLinks: webLinksEntry,
+  graphMini: graphMiniEntry,
+  sourceList: sourceListEntry,
+  memoryChips: memoryChipsEntry,
 };
 
 /** catalog 的 id 集合，供类型收窄与测试断言使用 */

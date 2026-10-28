@@ -11,12 +11,20 @@
 import type { Component } from 'vue'
 import StackLayout from '@/components/layout/StackLayout.vue'
 import KnowledgeCards from '@/components/cards/KnowledgeCards.vue'
+import WebLinks from '@/components/cards/WebLinks.vue'
+import SourceList from '@/components/cards/SourceList.vue'
+import MemoryChips from '@/components/cards/MemoryChips.vue'
+import GraphMini from '@/components/cards/GraphMini.vue'
 import MarkdownView from '@/components/markdown/MarkdownView.vue'
 
 /** 组件目录：key 必须与后端 catalog.ts 的 key 一一对应 */
 export const REGISTRY: Record<string, Component> = {
   stack: StackLayout,
   knowledgeCards: KnowledgeCards,
+  webLinks: WebLinks,
+  graphMini: GraphMini,
+  sourceList: SourceList,
+  memoryChips: MemoryChips,
   markdown: MarkdownView,
 }
 
