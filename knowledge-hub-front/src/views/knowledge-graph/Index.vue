@@ -65,8 +65,8 @@ async function onSearch(): Promise<void> {
     // type=document：图侧为空，用 ES 命中文档画孤立文档节点
     if (type.value === 'document') {
       for (const it of res.docs.items ?? []) {
-        if (it.doc_id && !nodes.some((n) => n.id === `document:${it.doc_id}`)) {
-          nodes.push({ id: `document:${it.doc_id}`, kind: 'document', name: it.title ?? it.doc_id, docId: it.doc_id })
+        if (it.docId && !nodes.some((n) => n.id === `document:${it.docId}`)) {
+          nodes.push({ id: `document:${it.docId}`, kind: 'document', name: it.title || it.docId, docId: it.docId })
         }
       }
     }

@@ -1,5 +1,6 @@
 import { request } from './http'
 import { endpoint } from './endpoint'
+import { adaptDocHits } from './adapters/graph'
 
 /** 全景图谱节点（后端 KgOverviewNode，id 约定 document:{docId} / entity:{type}:{name}） */
 export interface GraphNode {
@@ -75,13 +76,24 @@ export interface GraphDocEdgeRow {
   entityType: string
 }
 
+/** 检索命中文档（GET /kg/search docs.items，经 adapters/graph 适配后） */
+export interface GraphDocHit {
+  docId: string
+  title: string
+}
+
 /** GET /kg/search 响应（现有结构 + docEdges 追加） */
 export interface GraphSearchResult {
   q: string
-  docs: { total: number; page: number; pageSize: number; items: Array<{ doc_id?: string; title?: string }> }
+  docs: { total: number; page: number; pageSize: number; items: GraphDocHit[] }
   entities: GraphEntityHit[]
   edges: GraphEdgeRow[]
   docEdges: GraphDocEdgeRow[]
+}
+
+/** 后端原始响应：docs.items 仍是 ES 字段（snake_case），只在 api 层内部出现 */
+interface RawGraphSearchResult extends Omit<GraphSearchResult, 'docs'> {
+  docs: { total: number; page: number; pageSize: number; items: unknown }
 }
 
 export type GraphSearchType = 'person' | 'org' | 'knowledge' | 'document'
@@ -93,7 +105,16 @@ export function fetchGraphOverview(limit?: number): Promise<GraphOverview> {
 }
 
 /** 聚合检索（关键词 + 可选实体类型过滤），用于画布切换为命中子图 */
-export function searchGraph(params: { q: string; type?: GraphSearchType; page?: number; pageSize?: number }): Promise<GraphSearchResult> {
+export async function searchGraph(params: {
+  q: string
+  type?: GraphSearchType
+  page?: number
+  pageSize?: number
+}): Promise<GraphSearchResult> {
   const { baseURL, url } = endpoint('graphs', '/search')
-  return request<GraphSearchResult>({ baseURL, url, method: 'get', params })
+  const res = await request<RawGraphSearchResult>({ baseURL, url, method: 'get', params })
+  return {
+    ...res,
+    docs: { ...res.docs, items: adaptDocHits(res.docs.items) },
+  }
 }
