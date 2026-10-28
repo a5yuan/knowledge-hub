@@ -124,22 +124,26 @@ const stripCode = (s, isVue = false) => (isVue ? stripHtml(stripTs(s)) : stripTs
   add('红线3 静态路由在 :id 之前', bad.length === 0, bad)
 }
 
-// ── 6. 红线4：snake_case 不得出现在视图层（剥离注释后判定）──────
+// ── 6. 红线4：后端字段名不得越过 src/api（剥离注释后判定）────────
 {
-  const roots = [join(ROOT, 'knowledge-hub-front/src/views'), join(ROOT, 'knowledge-hub-front/src/components')]
+  // 扫整个前端 src 再排除 api/ —— 而不是只列 views+components。
+  // 原因：原实现只扫两个目录，`api/graph.ts` 里的 doc_id 违规了也报不出来；
+  // 而红线管的是「不得越过 src/api」，api/ 内部允许（见 code-standards.md）。
+  const FRONT_SRC = join(ROOT, 'knowledge-hub-front/src')
   const KEYS = /\b(parse_state|is_public|author_id|create_by|update_time|doc_id|user_id|dept_id|team_id)\b/g
   const bad = []
-  for (const root of roots) {
-    for (const f of walk(root, (n) => /\.(vue|ts)$/.test(n))) {
-      stripCode(read(f), f.endsWith('.vue'))
-        .split(/\r?\n/)
-        .forEach((line, i) => {
-          const hit = line.match(KEYS)
-          if (hit) bad.push(`${rel(f)}:${i + 1} 出现 ${[...new Set(hit)].join(',')}`)
-        })
-    }
+  const files = walk(FRONT_SRC, (n) => /\.(vue|ts)$/.test(n)).filter(
+    (f) => !rel(f).includes('/src/api/'),
+  )
+  for (const f of files) {
+    stripCode(read(f), f.endsWith('.vue'))
+      .split(/\r?\n/)
+      .forEach((line, i) => {
+        const hit = line.match(KEYS)
+        if (hit) bad.push(`${rel(f)}:${i + 1} 出现 ${[...new Set(hit)].join(',')}`)
+      })
   }
-  add('红线4 视图层无 snake_case', bad.length === 0, bad)
+  add('红线4 snake_case 未越过 src/api', bad.length === 0, bad)
 }
 
 // ── 7. 红线5：前端不得直接写 /api 或 /real 字面量 URL ────────────

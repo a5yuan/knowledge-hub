@@ -78,7 +78,11 @@ select: ['id']            // ✗ 报 TS2559
 
 ### snake_case 红线
 
-后端字段名（`parse_state` / `is_public` / `author_id` …）**只允许出现在 `src/api/adapters/` 一个目录内**。视图层出现 snake_case 即等于隔离失守 —— 代码能跑，但后端改字段名时会连锁炸到页面。
+后端字段名（`parse_state` / `is_public` / `author_id` …）**不得越过 `src/api/`**：出现在 `views/`、`components/`、`router/`、`stores/`、`composables/` 里即等于隔离失守 —— 代码能跑，但后端改字段名时会连锁炸到页面。
+
+`src/api/` **内部允许**出现（那是和后端对话的地方，组装请求体、读响应本就是本职）。`adapters/` 是集中转换处，模块内联转换同样合规。**本规则要防的是字段名漏进视图，不是统一书写位置。**
+
+（2026-10-28 修正：原表述为「只允许出现在 `src/api/adapters/`」，过严 —— 按那个标准 `api/documents.ts` 组装请求体写 `is_public` 也算违规，而它显然不是设计意图。）
 
 ### 组件只依赖 `src/api/`
 

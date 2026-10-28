@@ -60,7 +60,7 @@ pnpm install && pnpm dev                     # http://localhost:5173（用 local
 1. **雪花 ID 必须经 `normalizeSnowflakeId` 转字符串出参** —— 否则前端精度丢失，本地测不出
 2. **不加 Repository 抽象层、不加拦截器 / 异常过滤器 / 响应包装** —— 能跑，架构却已破
 3. **静态子路径必须声明在 `@Get(':id')` 之前** —— 否则 404，排查半天
-4. **snake_case 只允许出现在 `src/api/adapters/`** —— 视图层出现即隔离失守
+4. **后端字段名（snake_case）不得越过 `src/api/`** —— 视图/组件/store 出现即隔离失守
 5. **前端 URL 一律经 `endpoint(resource, suffix)`** —— 不写字面量路径
 6. **写时间边界前读 `docs/engineering/pitfalls.md` §三** —— 两套时钟基准并存（25F 完成前）
 7. **不要跑 `pnpm run lint`** —— 实测一次重排 63 个无关文件；校验用 `pnpm run build` + `pnpm test`

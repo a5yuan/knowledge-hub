@@ -17,7 +17,7 @@ updated: 2026-10-27
 
 1. **任何 API 模块不得写字面量路径。** 一律 `endpoint(resource, suffix)` 取 `{ baseURL, url }`。
 2. **`baseURL` 编码"走哪个通道"，`url` 编码"资源路径"。** `/api` = MSW Mock，`/real` = 真实后端（Vite 代理剥前缀转 3000）。复数→单数的重写留在 `REAL_ROOT` 常量内，不下放到业务代码。
-3. **snake_case 只允许出现在 `adapters/`。** 视图层出现即隔离失守。
+3. **snake_case 不得越过 `src/api/`。** 本层内部允许出现（与后端对话是本职），`adapters/` 负责集中转换；漏到 `views/` / `components/` / `stores/` 即隔离失守。
 4. **`/api` 永不配置代理。** 它是 Mock 的保留命名空间。
 5. **`server.proxy` 与 `preview.proxy` 必须成对配置。** 构建产物经 preview 或 nginx 部署时不存在 `server.proxy`，漏配则所有真实请求落到 SPA fallback（返回 index.html）。
 
@@ -37,7 +37,7 @@ api/ 不依赖 views/、不依赖 router/、不依赖任何 store
 | `endpoint.ts` | 资源模式表 `DEFAULT_MODE` + 路径重写表 `REAL_ROOT` + `endpoint()` / `isReal()` / `rawCall()` |
 | `http.ts` | axios 实例，负责拆 `{code, data, message}` 包 |
 | `session.ts` | access/refresh token 存取、`initSession()` 版本闸、mock token 桥 |
-| `adapters/` | snake_case ↔ camelCase 的唯一转换层 |
+| `adapters/` | snake_case ↔ camelCase 的集中转换层（api 模块内联转换同样合规） |
 
 ## 已知陷阱
 
